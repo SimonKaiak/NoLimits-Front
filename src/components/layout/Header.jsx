@@ -30,7 +30,6 @@ function Header() {
   const myListCount = useAppStore((s) => s.myList.length);
   const user        = useAppStore((state) => state.user);
   const clearUser   = useAppStore((s) => s.clearUser);
-  const token = localStorage.getItem("nl_token");
 
   return (
     <header className="nl-header">

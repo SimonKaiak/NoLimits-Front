@@ -31,23 +31,23 @@ export const MEDIA_TYPES = {
   GAME:   'game',
 };
 
-export const MEDIA_TYPE_LABELS = {
-  [MEDIA_TYPES.MOVIE]:  'Película',
-  [MEDIA_TYPES.SERIES]: 'Serie',
-  [MEDIA_TYPES.ANIME]:  'Anime',
-  [MEDIA_TYPES.BOOK]:   'Libro',
-  [MEDIA_TYPES.MUSIC]:  'Música',
-  [MEDIA_TYPES.GAME]:   'Videojuego',
-};
+export const MEDIA_TYPE_LABELS = new Map([
+  [MEDIA_TYPES.MOVIE,  'Película'],
+  [MEDIA_TYPES.SERIES, 'Serie'],
+  [MEDIA_TYPES.ANIME,  'Anime'],
+  [MEDIA_TYPES.BOOK,   'Libro'],
+  [MEDIA_TYPES.MUSIC,  'Música'],
+  [MEDIA_TYPES.GAME,   'Videojuego'],
+]);
 
-export const MEDIA_TYPE_BADGE_CLASS = {
-  [MEDIA_TYPES.MOVIE]:  'nl-badge--movie',
-  [MEDIA_TYPES.SERIES]: 'nl-badge--series',
-  [MEDIA_TYPES.ANIME]:  'nl-badge--anime',
-  [MEDIA_TYPES.BOOK]:   'nl-badge--book',
-  [MEDIA_TYPES.MUSIC]:  'nl-badge--music',
-  [MEDIA_TYPES.GAME]:   'nl-badge--game',
-};
+export const MEDIA_TYPE_BADGE_CLASS = new Map([
+  [MEDIA_TYPES.MOVIE,  'nl-badge--movie'],
+  [MEDIA_TYPES.SERIES, 'nl-badge--series'],
+  [MEDIA_TYPES.ANIME,  'nl-badge--anime'],
+  [MEDIA_TYPES.BOOK,   'nl-badge--book'],
+  [MEDIA_TYPES.MUSIC,  'nl-badge--music'],
+  [MEDIA_TYPES.GAME,   'nl-badge--game'],
+]);
 
 /* ── Tamaños de imagen TMDB ───────────────────────────────── */
 export const TMDB_POSTER_SIZES = {

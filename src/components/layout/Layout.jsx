@@ -15,7 +15,7 @@ function ScrollToTop() {
   }, [pathname]);
   return null;
 }
-import { AnimatePresence, motion } from 'motion/react';
+import { AnimatePresence } from 'motion/react';
 import Header  from './Header';
 import Footer  from './Footer';
 import ChatBot from '@/components/ui/ChatBot';
@@ -29,7 +29,6 @@ const PAGE_VARIANTS = {
 
 function Layout() {
   const theme    = useAppStore((s) => s.theme);
-  const location = useLocation();
 
   useEffect(() => {
     const html = document.documentElement;

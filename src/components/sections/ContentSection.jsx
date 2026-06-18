@@ -23,11 +23,11 @@ import BookCard     from '@/components/cards/BookCard';
 import SkeletonCard from '@/components/ui/SkeletonCard';
 import { CARD_STAGGER_DELAY } from '@/utils/constants';
 
-const CARD_COMPONENTS = {
-  media: MediaCard,
-  anime: AnimeCard,
-  book:  BookCard,
-};
+const CARD_COMPONENTS = new Map([
+  ['media', MediaCard],
+  ['anime', AnimeCard],
+  ['book',  BookCard],
+]);
 
 function ContentSection({
   title,
@@ -38,7 +38,7 @@ function ContentSection({
   limit       = 10,
   gridClass,
 }) {
-  const CardComponent  = CARD_COMPONENTS[cardType] ?? MediaCard;
+  const CardComponent  = CARD_COMPONENTS.get(cardType) ?? MediaCard;
   const resolvedGrid   = gridClass ?? (cardType === 'book' ? 'nl-grid nl-grid--books' : 'nl-grid nl-grid--cards');
   const visibleObras   = obras ? obras.slice(0, limit) : [];
 

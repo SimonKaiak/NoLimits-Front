@@ -45,9 +45,9 @@ function CardByType({ obra, cardType }) {
 
 /* ── Sección individual con animación stagger ─────────────── */
 function SagaSection({ section, obras, accentColor }) {
+  const [page, setPage] = useState(0);
   if (!obras || obras.length === 0) return null;
   const Icon = section.icon;
-  const [page, setPage] = useState(0);
   const PAGE_SIZE = section.key === 'games' ? 8 : section.key === 'books' ? 12 : 10;
   const totalPages = Math.ceil(obras.length / PAGE_SIZE);
   const visible = obras.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
@@ -317,7 +317,7 @@ function CuratedSagaView({ sagaName, curated }) {
 /* ════════════════════════════════════════════════════════════
    VISTA GENÉRICA — para sagas no curadas
 ════════════════════════════════════════════════════════════ */
-function GenericSagaView({ sagaName, onSearch }) {
+function GenericSagaView({ sagaName }) {
   const { grouped, isLoading, error } = useSagaSearch(sagaName);
   const totalResults = Object.values(grouped).reduce((acc, arr) => acc + (arr?.length ?? 0), 0);
 

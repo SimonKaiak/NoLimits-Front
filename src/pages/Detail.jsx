@@ -39,10 +39,6 @@ import {
   eliminarReview,
   reaccionarReview
 } from '@/services/reviewService';
-import {
-  agregarFavoritoUsuario,
-  eliminarFavoritoUsuario,
-} from '@/services/usuarios';
 import { translateToSpanish } from '@/utils/translateText';
 
 /* ── Etiqueta de sección estilo brandbook ─────────────────── */
@@ -304,7 +300,8 @@ function Detail() {
     if (!obra) return;
     if (isMovie)  fetchMovieProviders(nativeId).then(setProviders).catch(() => {});
     if (isSeries) fetchSeriesProviders(nativeId).then(setProviders).catch(() => {});
-  }, [obra?.id]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- se usa obra?.id (no obra completo) a propósito, para no repetir el fetch en cada render donde obra es un objeto nuevo pero la misma obra
+  }, [obra?.id, isMovie, isSeries, nativeId]);
 
   const isLoggedIn = () => {
     const token = localStorage.getItem("nl_token");
@@ -624,6 +621,7 @@ useEffect(() => {
   const toggleRespuestas = (reviewId) => {
     setExpandedReplies((prev) => ({
       ...prev,
+      // eslint-disable-next-line security/detect-object-injection -- reviewId viene de las reseñas propias del backend, es estado local de UI, no una clave externa peligrosa
       [reviewId]: !prev[reviewId],
     }));
   };

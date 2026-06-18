@@ -16,25 +16,23 @@
 import PropTypes from 'prop-types';
 import { ExternalLink, BookOpen, Gamepad2, Film, Music } from 'lucide-react';
 import { MEDIA_TYPES, DATA_SOURCES } from '@/utils/constants';
-import { mediaIdToSlug } from '@/utils/formatters';
-import { useNavigate } from 'react-router-dom';
 
 /* ── Mapeo de plataformas de juegos a colores de marca ──── */
-const GAME_PLATFORM_CONFIG = {
-  'PC':                   { color: '#60A5FA', abbr: 'PC'  },
-  'PlayStation 5':        { color: '#003087', abbr: 'PS5' },
-  'PlayStation 4':        { color: '#003087', abbr: 'PS4' },
-  'Xbox Series X|S':      { color: '#107C10', abbr: 'XSX' },
-  'Xbox One':             { color: '#107C10', abbr: 'XB1' },
-  'Nintendo Switch':      { color: '#E4000F', abbr: 'NSW' },
-  'iOS':                  { color: '#A78BFA', abbr: 'iOS' },
-  'Android':              { color: '#34D399', abbr: 'AND' },
-};
+const GAME_PLATFORM_CONFIG = new Map([
+  ['PC',                 { color: '#60A5FA', abbr: 'PC'  }],
+  ['PlayStation 5',      { color: '#003087', abbr: 'PS5' }],
+  ['PlayStation 4',      { color: '#003087', abbr: 'PS4' }],
+  ['Xbox Series X|S',    { color: '#107C10', abbr: 'XSX' }],
+  ['Xbox One',           { color: '#107C10', abbr: 'XB1' }],
+  ['Nintendo Switch',    { color: '#E4000F', abbr: 'NSW' }],
+  ['iOS',                { color: '#A78BFA', abbr: 'iOS' }],
+  ['Android',            { color: '#34D399', abbr: 'AND' }],
+]);
 
 /* Normaliza el nombre de plataforma a una clave conocida */
 function normalizePlatform(name) {
   if (!name) return null;
-  for (const key of Object.keys(GAME_PLATFORM_CONFIG)) {
+  for (const key of GAME_PLATFORM_CONFIG.keys()) {
     if (name.toLowerCase().includes(key.toLowerCase())) return key;
     if (key.toLowerCase().includes(name.toLowerCase())) return key;
   }
@@ -43,7 +41,7 @@ function normalizePlatform(name) {
 
 function PlatformBadge({ name }) {
   const normalized = normalizePlatform(name);
-  const config     = normalized ? GAME_PLATFORM_CONFIG[normalized] : null;
+  const config     = normalized ? GAME_PLATFORM_CONFIG.get(normalized) : null;
 
   return (
     <span
@@ -99,7 +97,7 @@ function LinkButton({ href, label, icon: Icon, accent = false }) {
 /* ── Componente principal ──────────────────────────────── */
 function WhereToFind({ obra, compact = false, providers = null }) {
   if (!obra) return null;
-  const { type, platforms = [], source } = obra;
+  const { type, platforms = [] } = obra;
 
   if (obra?.linksCompra?.length > 0) {
     return (
@@ -160,19 +158,19 @@ function WhereToFind({ obra, compact = false, providers = null }) {
     }
 
   // Fallback: botones por plataforma detectada
-    const PLATFORM_STORE_LINKS = {
-      'PlayStation 5':  { label: 'PlayStation Store', url: `https://store.playstation.com/es-cl/search/${encodeURIComponent(obra.title)}` },
-      'PlayStation 4':  { label: 'PlayStation Store', url: `https://store.playstation.com/es-cl/search/${encodeURIComponent(obra.title)}` },
-      'PC':             { label: 'Steam',              url: `https://store.steampowered.com/search/?term=${encodeURIComponent(obra.title)}` },
-      'Xbox Series X':  { label: 'Xbox Store',         url: `https://www.xbox.com/es-CL/Search/Results?q=${encodeURIComponent(obra.title)}` },
-      'Xbox One':       { label: 'Xbox Store',         url: `https://www.xbox.com/es-CL/Search/Results?q=${encodeURIComponent(obra.title)}` },
-      'Nintendo Switch':{ label: 'Nintendo eShop',     url: `https://www.nintendo.com/search/#q=${encodeURIComponent(obra.title)}` },
-    };
+    const PLATFORM_STORE_LINKS = new Map([
+      ['PlayStation 5',  { label: 'PlayStation Store', url: `https://store.playstation.com/es-cl/search/${encodeURIComponent(obra.title)}` }],
+      ['PlayStation 4',  { label: 'PlayStation Store', url: `https://store.playstation.com/es-cl/search/${encodeURIComponent(obra.title)}` }],
+      ['PC',             { label: 'Steam',              url: `https://store.steampowered.com/search/?term=${encodeURIComponent(obra.title)}` }],
+      ['Xbox Series X',  { label: 'Xbox Store',         url: `https://www.xbox.com/es-CL/Search/Results?q=${encodeURIComponent(obra.title)}` }],
+      ['Xbox One',       { label: 'Xbox Store',         url: `https://www.xbox.com/es-CL/Search/Results?q=${encodeURIComponent(obra.title)}` }],
+      ['Nintendo Switch',{ label: 'Nintendo eShop',     url: `https://www.nintendo.com/search/#q=${encodeURIComponent(obra.title)}` }],
+    ]);
 
     const platformButtons = knownPlatforms
       .map((p) => {
-        const key = Object.keys(PLATFORM_STORE_LINKS).find((k) => p.includes(k) || k.includes(p));
-        return key ? { ...PLATFORM_STORE_LINKS[key] } : null;
+        const key = [...PLATFORM_STORE_LINKS.keys()].find((k) => p.includes(k) || k.includes(p));
+        return key ? { ...PLATFORM_STORE_LINKS.get(key) } : null;
       })
       .filter(Boolean)
       .filter((v, i, arr) => arr.findIndex((x) => x.label === v.label) === i);

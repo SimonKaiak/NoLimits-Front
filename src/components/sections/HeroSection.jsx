@@ -132,6 +132,7 @@ function HeroSection() {
             key={i}
             urls={colUrls}
             direction={i % 2 === 0 ? 'up' : 'down'}
+            // eslint-disable-next-line security/detect-object-injection -- `i` es el índice numérico del propio .map(), no una clave externa
             speed={speeds[i]}
           />
         ))}

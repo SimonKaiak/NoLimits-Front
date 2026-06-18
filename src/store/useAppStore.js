@@ -278,6 +278,7 @@ const useAppStore = create(
         set((state) => ({ reviews: { ...state.reviews, [obraId]: text } })),
 
       /** @param {string} obraId @returns {string} */
+      // eslint-disable-next-line security/detect-object-injection -- obraId es el id propio de la obra, no input externo sin validar
       getReview: (obraId) => get().reviews[obraId] ?? '',
 
       /**
@@ -287,6 +288,7 @@ const useAppStore = create(
       deleteReview: (obraId) =>
         set((state) => {
           const updated = { ...state.reviews };
+          // eslint-disable-next-line security/detect-object-injection -- obraId es el id propio de la obra, no input externo sin validar
           delete updated[obraId];
           return { reviews: updated };
         }),

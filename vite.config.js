@@ -26,6 +26,13 @@ export default defineConfig(({ mode }) => {
       environment: 'jsdom',
       setupFiles: './src/tests/setup.js',
 
+      // Evita que un .env local (p. ej. VITE_API_BASE_URL=http://localhost:8080
+      // para apuntar a un backend propio en desarrollo) se filtre a los tests
+      // y rompa las aserciones que esperan rutas relativas (/api/igdb/...).
+      env: {
+        VITE_API_BASE_URL: '',
+      },
+
       exclude: [
         'node_modules',
         'dist',

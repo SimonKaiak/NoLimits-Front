@@ -10,21 +10,33 @@ import globals from 'globals'
 import reactHooks from 'eslint-plugin-react-hooks'
 import reactRefresh from 'eslint-plugin-react-refresh'
 import security from 'eslint-plugin-security'
+import react from 'eslint-plugin-react'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 // defineConfig permite estructurar la configuración moderna de ESLint
 export default defineConfig([
-  
+
   // ---------------------------------
   // Carpetas que ESLint ignorará
   // ---------------------------------
   // No analizará la carpeta dist porque contiene archivos compilados
-  globalIgnores(['dist']),
+  globalIgnores(['dist', 'coverage']),
+
+  // ---------------------------------
+  // Archivos que corren en Node (no en el browser):
+  // configs de build/test y los propios archivos de test (usan `global`).
+  // ---------------------------------
+  {
+    files: ['vite.config.js', 'playwright.config.js', 'src/tests/**/*.{js,jsx}'],
+    languageOptions: {
+      globals: globals.node,
+    },
+  },
 
   {
     // Archivos a los que se aplicará esta configuración
     files: ['**/*.{js,jsx}'],
-    plugins: { security },
+    plugins: { security, react },
 
     // ---------------------------------
     // Configuraciones base recomendadas
@@ -57,7 +69,9 @@ export default defineConfig([
       // Evita errores por variables no usadas,
       // PERO ignora las que comiencen con mayúscula o guión bajo.
       // Útil para constantes globales o props que se usan indirectamente.
-      'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]' }],
+      'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]', argsIgnorePattern: '^_' }],
+      'react/jsx-uses-vars': 'error',
+      'react/jsx-uses-react': 'error',
     },
   },
 ])

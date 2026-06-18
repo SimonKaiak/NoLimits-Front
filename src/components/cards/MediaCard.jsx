@@ -17,10 +17,6 @@ import Badge      from '@/components/ui/Badge';
 import useAppStore from '@/store/useAppStore';
 import { FADE_UP_VARIANTS } from '@/utils/constants';
 import { mediaIdToSlug } from '@/utils/formatters';
-import {
-  agregarFavoritoUsuario,
-  eliminarFavoritoUsuario,
-} from '@/services/usuarios';
 
 const POSTER_FALLBACK = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 300"%3E%3Crect width="200" height="300" fill="%231C1C1F"/%3E%3C/svg%3E';
 

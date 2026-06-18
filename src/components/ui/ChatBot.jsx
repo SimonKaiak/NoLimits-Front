@@ -20,110 +20,12 @@ import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { MessageCircle, X, Send, Bot, User } from 'lucide-react';
-import { searchMovies, searchSeries } from '@/services/tmdb';
-import { searchAnime }               from '@/services/jikan';
-/* IGDB vía proxy: búsqueda de juegos */
-import {
-  normalizeTmdbMovie,
-  normalizeTmdbSeries,
-  normalizeJikanAnime,
-  normalizeIgdbGame,
-} from '@/utils/normalizeMedia';
-import { searchGames } from '@/services/igdb';
-import { mediaIdToSlug, truncateText } from '@/utils/formatters';
+import { mediaIdToSlug } from '@/utils/formatters';
 
 const API_BASE = (
   import.meta.env.VITE_API_URL ||
   'https://nolimits-backend-final.onrender.com'
 ).replace(/\/+$/, '');
-
-/* ── Motor de procesamiento de mensajes ─────────────────── */
-
-/**
- * Detecta la intención del mensaje y ejecuta la acción correspondiente.
- * En el futuro: reemplazar con llamada a POST /api/chat.
- *
- * @param {string} text  — Mensaje del usuario
- * @param {Function} navigate — Router navigate
- * @returns {Promise<{ text: string, results?: Obra[] }>}
- */
-async function processMessage(text, navigate) {
-  const lower = text.toLowerCase().trim();
-
-  /* ── Intención: saga / franquicia ─────────────────────── */
-  const sagaMatch = lower.match(/saga\s+(?:de\s+)?(.+)|franquicia\s+(?:de\s+)?(.+)/i);
-  if (sagaMatch) {
-    const sagaName = (sagaMatch[1] || sagaMatch[2]).trim();
-    navigate(`/saga/${encodeURIComponent(sagaName)}`);
-    return { text: `Abriendo la saga de **${sagaName}** — aquí encontrarás todas sus películas, juegos, anime y más.` };
-  }
-
-  /* ── Intención: recomendación de anime ────────────────── */
-  if (lower.includes('recomiend') && (lower.includes('anime') || lower.includes('animé'))) {
-    const res = await searchAnime('action', 1).catch(() => ({ data: [] }));
-    const items = (res.data ?? []).slice(0, 3).map(normalizeJikanAnime);
-    return {
-      text: 'Estos animes están muy bien valorados:',
-      results: items,
-    };
-  }
-
-  /* ── Intención: recomendación de película ─────────────── */
-  if (lower.includes('recomiend') && (lower.includes('peli') || lower.includes('film') || lower.includes('movie'))) {
-    const res = await searchMovies('adventure').catch(() => ({ results: [] }));
-    const items = (res.results ?? []).slice(0, 3).map(normalizeTmdbMovie);
-    return { text: 'Algunas películas que quizás te gusten:', results: items };
-  }
-
-  /* ── Intención: dónde ver ─────────────────────────────── */
-  const whereMatch = lower.match(/d[oó]nde\s+(?:puedo\s+)?(?:ver|encontrar|conseguir)\s+(.+)/i);
-  if (whereMatch) {
-    const title = whereMatch[1].replace(/[?¿]/g, '').trim();
-    const res = await searchMovies(title).catch(() => ({ results: [] }));
-    const item = res.results?.[0] ? normalizeTmdbMovie(res.results[0]) : null;
-    if (item) {
-      return {
-        text: `Encontré **${item.title}** (${item.year}). Haz clic para ver dónde está disponible:`,
-        results: [item],
-      };
-    }
-    return { text: `No encontré "${title}". Prueba con el nombre original o verifica si está bien escrito.` };
-  }
-
-  /* ── Intención: juegos ────────────────────────────────── */
-  const gameMatch = lower.match(/(?:juegos?\s+(?:de|sobre)\s+|games?\s+of\s+)(.+)/i);
-  if (gameMatch) {
-    const query = gameMatch[1].trim();
-    const res   = await searchGames(query).catch(() => []);
-    const items = (Array.isArray(res) ? res : []).slice(0, 3).map(normalizeIgdbGame);
-    if (items.length > 0) {
-      return { text: `Juegos relacionados con **${query}**:`, results: items };
-    }
-    return { text: `No encontré juegos de "${query}".` };
-  }
-
-  /* ── Intención: búsqueda general ─────────────────────── */
-  const searchMatch = lower.match(/busca(?:r)?\s+(.+)|search\s+(.+)/i);
-  const searchTerm  = searchMatch ? (searchMatch[1] || searchMatch[2]).trim() : null;
-
-  if (searchTerm) {
-    navigate(`/search?q=${encodeURIComponent(searchTerm)}`);
-    return { text: `Buscando **${searchTerm}** en todas las fuentes…` };
-  }
-
-  /* ── Respuestas de contexto ───────────────────────────── */
-  if (lower.includes('hola') || lower.includes('hi') || lower.includes('buenas')) {
-      return { text: '¡Oye! Soy el asistente de NoLimits. ¿Qué andas buscando? ¡No me subestimes, sé de todo lo que hay aquí!' };
-  }
-
-  if (lower.includes('gracias') || lower.includes('thanks')) {
-    return { text: '¡De nada! Si necesitás algo más, aquí estoy 🎬' };
-  }
-
-  /* ── Fallback: búsqueda directa ───────────────────────── */
-  navigate(`/search?q=${encodeURIComponent(text.trim())}`);
-  return { text: `Buscando "**${text.trim()}**" en el catálogo…` };
-}
 
 /* ── Componente ─────────────────────────────────────────── */
 
@@ -182,7 +84,6 @@ function ChatBot() {
   const [input,    setInput]    = useState('');
   const [thinking, setThinking] = useState(false);
   const bottomRef = useRef(null);
-  const navigate  = useNavigate();
 
   /* Scroll al último mensaje */
   useEffect(() => {

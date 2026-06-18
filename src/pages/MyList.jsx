@@ -56,7 +56,7 @@ function MyList() {
       return;
     }
     loadFavorites();
-  }, []);
+  }, [navigate, loadFavorites]);
 
   const filtered = 
     activeTab === 'all'

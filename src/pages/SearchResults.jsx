@@ -39,6 +39,16 @@ const TYPE_GROUPS = [
   { type: MEDIA_TYPES.MUSIC,  label: 'Música',      icon: Music,    cardType: 'media' },
 ];
 
+const TRENDING_LABELS = new Map([
+  ['all',    'contenidos en tendencia'],
+  ['movie',  'películas en tendencia'],
+  ['series', 'series en tendencia'],
+  ['anime',  'animes destacados'],
+  ['book',   'libros recomendados'],
+  ['game',   'juegos destacados'],
+  ['music',  'álbumes destacados'],
+]);
+
 /* ── Selector de card por tipo ────────────────────────────── */
 function CardForType({ obra, cardType }) {
   if (cardType === 'anime') return <AnimeCard obra={obra} />;
@@ -107,7 +117,7 @@ function GroupHeader({ icon: Icon, label, count, index }) {
 }
 
 /* ── Grupo de resultados por tipo ─────────────────────────── */
-function ResultGroup({ group, obras, groupIndex, activeType }) {
+function ResultGroup({ group, obras, groupIndex }) {
   if (!obras || obras.length === 0) return null;
 
   const uniqueObras = Array.from(
@@ -166,16 +176,16 @@ function SearchResults() {
   const defaultGames  = useTopGames();
   const defaultMusic  = useMusicSearch('soundtrack');
 
-  const defaultQueryByType = {
-    [MEDIA_TYPES.MOVIE]:  defaultMovies,
-    [MEDIA_TYPES.SERIES]: defaultSeries,
-    [MEDIA_TYPES.ANIME]:  defaultAnime,
-    [MEDIA_TYPES.BOOK]:   defaultBooks,
-    [MEDIA_TYPES.GAME]:   defaultGames,
-    [MEDIA_TYPES.MUSIC]:  defaultMusic,
-  };
+  const defaultQueryByType = new Map([
+    [MEDIA_TYPES.MOVIE,  defaultMovies],
+    [MEDIA_TYPES.SERIES, defaultSeries],
+    [MEDIA_TYPES.ANIME,  defaultAnime],
+    [MEDIA_TYPES.BOOK,   defaultBooks],
+    [MEDIA_TYPES.GAME,   defaultGames],
+    [MEDIA_TYPES.MUSIC,  defaultMusic],
+  ]);
 
-  const activeDefaultQuery = defaultQueryByType[type];
+  const activeDefaultQuery = defaultQueryByType.get(type);
 
   const allDefaultResults = [
     ...(defaultMovies.data ?? []),
@@ -275,15 +285,7 @@ function SearchResults() {
                   <>
                     <span style={{ color: 'var(--nl-accent)' }}>{totalCount}</span>
                     {' '}
-                    {{
-                      all:    'contenidos en tendencia',
-                      movie:  'películas en tendencia',
-                      series: 'series en tendencia',
-                      anime:  'animes destacados',
-                      book:   'libros recomendados',
-                      game:   'juegos destacados',
-                      music:  'álbumes destacados',
-                    }[type] ?? 'contenidos disponibles'}
+                    {TRENDING_LABELS.get(type) ?? 'contenidos disponibles'}
                   </>
                 )
               ) : (

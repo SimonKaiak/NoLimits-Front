@@ -23,6 +23,7 @@ export default function ResetPassword() {
   async function handleUpdate(e) {
     e.preventDefault();
 
+    // eslint-disable-next-line security/detect-possible-timing-attacks -- son dos campos de un formulario (no un secreto contra un valor guardado), comparar en tiempo constante no aporta nada aquí
     if (password !== confirmPassword) {
         setError('Las contraseñas no coinciden.');
         return;

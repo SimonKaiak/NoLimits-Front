@@ -46,7 +46,7 @@ function authHeaders(extra = {}) {
 // ==========================================================
 // LISTADO + BÚSQUEDA DE USUARIOS (por nombre o correo)
 // ==========================================================
-export async function listarUsuarios(page = 1, search = "") {
+export async function listarUsuarios(_page = 1, search = "") {
   const trimmed = search.trim();
 
   let endpoint;

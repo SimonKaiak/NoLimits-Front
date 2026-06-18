@@ -17,22 +17,22 @@ import PropTypes from 'prop-types';
 /**
  * Mapeo de variante → sufijo de clase CSS.
  */
-const VARIANT_CLASS = {
-  primary:     'nl-btn--primary',
-  secondary:   'nl-btn--secondary',
-  ghost:       'nl-btn--ghost',
-  destructive: 'nl-btn--destructive',
-};
+const VARIANT_CLASS = new Map([
+  ['primary',     'nl-btn--primary'],
+  ['secondary',   'nl-btn--secondary'],
+  ['ghost',       'nl-btn--ghost'],
+  ['destructive', 'nl-btn--destructive'],
+]);
 
-const SIZE_CLASS = {
-  sm: 'nl-btn--sm',
-  md: 'nl-btn--md',
-  lg: 'nl-btn--lg',
-};
+const SIZE_CLASS = new Map([
+  ['sm', 'nl-btn--sm'],
+  ['md', 'nl-btn--md'],
+  ['lg', 'nl-btn--lg'],
+]);
 
 function Button({ variant = 'primary', size = 'md', children, className = '', ...rest }) {
-  const variantClass = VARIANT_CLASS[variant] ?? VARIANT_CLASS.primary;
-  const sizeClass    = SIZE_CLASS[size]    ?? SIZE_CLASS.md;
+  const variantClass = VARIANT_CLASS.get(variant) ?? VARIANT_CLASS.get('primary');
+  const sizeClass    = SIZE_CLASS.get(size)    ?? SIZE_CLASS.get('md');
 
   return (
     <button

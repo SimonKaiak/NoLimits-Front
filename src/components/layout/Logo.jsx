@@ -18,14 +18,14 @@ import PropTypes from 'prop-types';
 import { Link } from 'react-router-dom';
 
 /* Tamaños de fuente mapeados a variantes */
-const FONT_SIZES = {
-  sm: '16px',
-  md: '22px',
-  lg: '32px',
-};
+const FONT_SIZES = new Map([
+  ['sm', '16px'],
+  ['md', '22px'],
+  ['lg', '32px'],
+]);
 
 function Logo({ size = 'md', variant = 'dark' }) {
-  const fontSize = FONT_SIZES[size] ?? FONT_SIZES.md;
+  const fontSize = FONT_SIZES.get(size) ?? FONT_SIZES.get('md');
 
   /* En variante compacta solo muestra "n/l" */
   if (variant === 'compact') {

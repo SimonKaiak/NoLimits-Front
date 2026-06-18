@@ -28,8 +28,8 @@ function Badge({ type, label, variant = 'type' }) {
   }
 
   /* Badge de tipo de obra */
-  const badgeClass = MEDIA_TYPE_BADGE_CLASS[type] ?? '';
-  const displayLabel = label ?? MEDIA_TYPE_LABELS[type] ?? type;
+  const badgeClass = MEDIA_TYPE_BADGE_CLASS.get(type) ?? '';
+  const displayLabel = label ?? MEDIA_TYPE_LABELS.get(type) ?? type;
 
   return (
     <span className={`nl-badge ${badgeClass}`}>

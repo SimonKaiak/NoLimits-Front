@@ -415,7 +415,7 @@ function Profile() {
       const nombreArchivo =
         `${Date.now()}-${file.name}`;
       
-      const { data, error } = await supabase
+      const { error } = await supabase
         .storage
         .from("avatars")
         .upload(

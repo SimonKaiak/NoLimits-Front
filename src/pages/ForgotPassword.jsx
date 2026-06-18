@@ -30,7 +30,7 @@ export default function ForgotPassword() {
             }
 
             setMessage("Revisa tu correo para restablecer tu contraseña.");
-        } catch (error) {
+        } catch {
             setError("Ocurrió un error al intentar restablecer la contraseña.");
         } finally {
             setLoading(false);

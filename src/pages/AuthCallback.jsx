@@ -132,7 +132,7 @@ export default function AuthCallback() {
     };
 
     finishGoogleLogin();
-  }, [navigate]);
+  }, [navigate, setUser]);
 
   return (
     <p style={{ padding: "20px" }}>

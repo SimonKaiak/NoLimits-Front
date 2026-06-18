@@ -64,14 +64,14 @@ const FEATURED_SAGAS = [
 ];
 
 /* ── Íconos por tipo de contenido ─────────────────────────── */
-const TYPE_ICONS = {
-  movies:  { Icon: Film,     label: 'Películas' },
-  series:  { Icon: Tv,       label: 'Series'    },
-  anime:   { Icon: Zap,      label: 'Anime'     },
-  games:   { Icon: Sword,    label: 'Juegos'    },
-  books:   { Icon: BookOpen, label: 'Libros'    },
-  music:   { Icon: Music,    label: 'Música'    },
-};
+const TYPE_ICONS = new Map([
+  ['movies', { Icon: Film,     label: 'Películas' }],
+  ['series', { Icon: Tv,       label: 'Series'    }],
+  ['anime',  { Icon: Zap,      label: 'Anime'     }],
+  ['games',  { Icon: Sword,    label: 'Juegos'    }],
+  ['books',  { Icon: BookOpen, label: 'Libros'    }],
+  ['music',  { Icon: Music,    label: 'Música'    }],
+]);
 
 /* ── Variantes de animación ───────────────────────────────── */
 const cardVariants = {
@@ -197,7 +197,7 @@ function SagaCard({ saga, backdropUrl, index }) {
         {/* Tipos de contenido */}
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
           {saga.types.map((t) => {
-            const cfg = TYPE_ICONS[t];
+            const cfg = TYPE_ICONS.get(t);
             if (!cfg) return null;
             const { Icon, label } = cfg;
             return (
@@ -299,6 +299,7 @@ function FeaturedSagas() {
           <SagaCard
             key={saga.name}
             saga={saga}
+            // eslint-disable-next-line security/detect-object-injection -- `i` es el índice numérico del propio .map(), no una clave externa
             backdropUrl={results[i]?.data}
             index={i}
           />
