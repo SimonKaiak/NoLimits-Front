@@ -133,4 +133,117 @@ describe('SearchBar', () => {
       'Matrix'
     );
   });
+
+  test('muestra tabs por defecto cuando compact es false', () => {
+    renderSearchBar();
+
+    assert.isNotNull(
+      screen.getByRole('tablist')
+    );
+  });
+
+  test('marca el tipo inicial como seleccionado', () => {
+    renderSearchBar({
+      initialType: 'anime',
+    });
+
+    const animeTab = screen.getByRole('tab', {
+      name: /Anime/i,
+    });
+
+    assert.equal(
+      animeTab.getAttribute('aria-selected'),
+      'true'
+    );
+  });
+
+  test('elimina espacios al inicio y final antes de buscar', () => {
+    const onSearch = vi.fn();
+
+    renderSearchBar({
+      onSearch,
+    });
+
+    fireEvent.change(
+      screen.getByLabelText('Buscar obras'),
+      {
+        target: {
+          value: '   One Piece   ',
+        },
+      }
+    );
+
+    fireEvent.submit(
+      screen.getByRole('search')
+    );
+
+    assert.deepEqual(
+      onSearch.mock.calls[0],
+      ['One Piece', 'all']
+    );
+  });
+
+  test('no ejecuta búsqueda cuando solo contiene espacios', () => {
+    const onSearch = vi.fn();
+
+    renderSearchBar({
+      onSearch,
+    });
+
+    fireEvent.change(
+      screen.getByLabelText('Buscar obras'),
+      {
+        target: {
+          value: '      ',
+        },
+      }
+    );
+
+    fireEvent.submit(
+      screen.getByRole('search')
+    );
+
+    assert.equal(
+      onSearch.mock.calls.length,
+      0
+    );
+  });
+
+  test('actualiza el tipo activo al cambiar de tab', () => {
+    renderSearchBar();
+
+    const animeTab = screen.getByRole('tab', {
+      name: /Anime/i,
+    });
+
+    fireEvent.click(animeTab);
+
+    assert.equal(
+      animeTab.getAttribute('aria-selected'),
+      'true'
+    );
+  });
+
+  test('actualiza también el tipo inicial al hacer rerender', () => {
+    const { rerender } = render(
+      <MemoryRouter>
+        <SearchBar initialType="movie" />
+      </MemoryRouter>
+    );
+
+    rerender(
+      <MemoryRouter>
+        <SearchBar initialType="anime" />
+      </MemoryRouter>
+    );
+
+    const animeTab = screen.getByRole('tab', {
+      name: /Anime/i,
+    });
+
+    assert.equal(
+      animeTab.getAttribute('aria-selected'),
+      'true'
+    );
+  });
 });

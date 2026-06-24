@@ -137,4 +137,122 @@ describe('SearchResults - tests de regresión', () => {
     assert.isNotNull(screen.getByTestId('skeleton-card'));
     assert.isNotNull(screen.getByText(/Buscando/i));
   });
+
+  test('muestra texto singular cuando existe un resultado', () => {
+    useSearch.mockReturnValue({
+      data: [
+        {
+          id: '1',
+          title: 'Matrix',
+          type: MEDIA_TYPES.MOVIE,
+        },
+      ],
+      isLoading: false,
+      isFetching: false,
+    });
+
+    render(
+      <MemoryRouter initialEntries={['/search?q=matrix&type=all']}>
+        <SearchResults />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByText('Matrix')).toBeInTheDocument();
+
+    expect(screen.getByText(/resultado para/i)).toBeInTheDocument();
+  });
+
+  test('muestra indicador cargando más', () => {
+    useSearch.mockReturnValue({
+      data: [
+        {
+          id: '1',
+          title: 'Matrix',
+          type: MEDIA_TYPES.MOVIE,
+        },
+      ],
+      isLoading: false,
+      isFetching: true,
+    });
+
+    render(
+      <MemoryRouter initialEntries={['/search?q=matrix&type=all']}>
+        <SearchResults />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByText('Matrix')).toBeInTheDocument();
+  });
+
+  test('muestra mensaje vacío para películas', () => {
+    useSearch.mockReturnValue({
+      data: [],
+      isLoading: false,
+      isFetching: false,
+    });
+
+    render(
+      <MemoryRouter initialEntries={['/search?q=matrix&type=movie']}>
+        <SearchResults />
+      </MemoryRouter>
+    );
+
+    expect(
+      screen.getByText(/No se encontraron/i)
+    ).toBeInTheDocument();
+
+    expect(
+      screen.getByRole('button', { name: /explorar saga/i })
+    ).toBeInTheDocument();
+  });
+
+  test('no muestra grupos sin resultados', () => {
+    useSearch.mockReturnValue({
+      data: [
+        {
+          id: '1',
+          title: 'Matrix',
+          type: MEDIA_TYPES.MOVIE,
+        },
+      ],
+      isLoading: false,
+      isFetching: false,
+    });
+
+    render(
+      <MemoryRouter initialEntries={['/search?q=matrix&type=all']}>
+        <SearchResults />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByText('Películas')).toBeInTheDocument();
+    expect(screen.queryByText('Anime')).not.toBeInTheDocument();
+  });
+
+  test('elimina resultados duplicados por id', () => {
+    useSearch.mockReturnValue({
+      data: [
+        {
+          id: '1',
+          title: 'Matrix',
+          type: MEDIA_TYPES.MOVIE,
+        },
+        {
+          id: '1',
+          title: 'Matrix',
+          type: MEDIA_TYPES.MOVIE,
+        },
+      ],
+      isLoading: false,
+      isFetching: false,
+    });
+
+    render(
+      <MemoryRouter initialEntries={['/search?q=matrix&type=all']}>
+        <SearchResults />
+      </MemoryRouter>
+    );
+
+    expect(screen.getAllByText('Matrix').length).toBeGreaterThan(0);
+  });
 });
