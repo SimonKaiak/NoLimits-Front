@@ -221,4 +221,166 @@ describe('WhereToFind - tests de regresión', () => {
 
     assert.equal(container.textContent, '');
   });
+
+  test('muestra Xbox Store para plataforma Xbox One', () => {
+    const obra = {
+      title: 'Halo',
+      type: MEDIA_TYPES.GAME,
+      platforms: ['Xbox One'],
+    };
+
+    render(<WhereToFind obra={obra} />);
+
+    assert.isNotNull(
+      screen.getByRole('link', {
+        name: /xbox store/i,
+      })
+    );
+  });
+
+  test('muestra Nintendo eShop para Nintendo Switch', () => {
+    const obra = {
+      title: 'Mario Kart',
+      type: MEDIA_TYPES.GAME,
+      platforms: ['Nintendo Switch'],
+    };
+
+    render(<WhereToFind obra={obra} />);
+
+    assert.isNotNull(
+      screen.getByRole('link', {
+        name: /nintendo eshop/i,
+      })
+    );
+  });
+
+  test('elimina tiendas duplicadas cuando existen plataformas equivalentes', () => {
+    const obra = {
+      title: 'FIFA',
+      type: MEDIA_TYPES.GAME,
+      platforms: ['PlayStation 4', 'PlayStation 5'],
+    };
+
+    render(<WhereToFind obra={obra} />);
+
+    const stores = screen.getAllByRole('link', {
+      name: /playstation store/i,
+    });
+
+    assert.equal(stores.length, 1);
+  });
+
+  test('usa urlCompra cuando link.url no existe', () => {
+    const obra = {
+      title: 'Producto',
+      type: MEDIA_TYPES.GAME,
+      linksCompra: [
+        {
+          urlCompra: 'https://ejemplo.cl/producto',
+          label: 'Tienda',
+        },
+      ],
+    };
+
+    render(<WhereToFind obra={obra} />);
+
+    const link = screen.getByRole('link', {
+      name: /tienda/i,
+    });
+
+    assert.equal(
+      link.getAttribute('href'),
+      'https://ejemplo.cl/producto'
+    );
+  });
+
+  test('usa plataformaNombre cuando label no existe', () => {
+    const obra = {
+      title: 'Producto',
+      type: MEDIA_TYPES.GAME,
+      linksCompra: [
+        {
+          url: 'https://ejemplo.cl',
+          plataformaNombre: 'Steam',
+        },
+      ],
+    };
+
+    render(<WhereToFind obra={obra} />);
+
+    assert.isNotNull(
+      screen.getByText('Steam')
+    );
+  });
+
+  test('usa nombre por defecto Mercado Libre cuando no existe label', () => {
+    const obra = {
+      title: 'Producto',
+      type: MEDIA_TYPES.GAME,
+      linksCompra: [
+        {
+          url: 'https://ejemplo.cl',
+        },
+      ],
+    };
+
+    render(<WhereToFind obra={obra} />);
+
+    assert.isNotNull(
+      screen.getByText('Mercado Libre')
+    );
+  });
+
+  test('usa providers.buy cuando flatrate no existe', () => {
+    const obra = {
+      title: 'Matrix',
+      type: MEDIA_TYPES.MOVIE,
+    };
+
+    render(
+      <WhereToFind
+        obra={obra}
+        providers={{
+          link: 'https://justwatch.com',
+          buy: [
+            {
+              provider_id: 1,
+              provider_name: 'Apple TV',
+            },
+          ],
+        }}
+      />
+    );
+
+    assert.isNotNull(
+      screen.getByText('Apple TV')
+    );
+  });
+
+  test('muestra logo del proveedor cuando existe logo_path', () => {
+    const obra = {
+      title: 'Matrix',
+      type: MEDIA_TYPES.MOVIE,
+    };
+
+    render(
+      <WhereToFind
+        obra={obra}
+        providers={{
+          link: 'https://justwatch.com',
+          flatrate: [
+            {
+              provider_id: 1,
+              provider_name: 'Netflix',
+              logo_path: '/logo.png',
+            },
+          ],
+        }}
+      />
+    );
+
+    const logo = screen.getByAltText('Netflix');
+
+    assert.isNotNull(logo);
+  });
 });

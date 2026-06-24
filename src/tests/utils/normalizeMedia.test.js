@@ -308,4 +308,116 @@ describe('normalizeMedia', () => {
     assert.equal(book.poster, '/img/fallbacks/book-fallback.webp');
     assert.equal(book.backdrop, '/img/fallbacks/book-fallback.webp');
   });
+
+});
+
+describe('normalizeMedia - branch coverage', () => {
+
+  it('RAWG ignora store sin URL', () => {
+    const result = normalizeRawgGame({
+      id: 1,
+      stores: [{ url: '' }],
+      genres: [],
+    });
+
+    expect(result.gameStores).toEqual([]);
+  });
+
+  it('RAWG ignora dominio desconocido', () => {
+    const result = normalizeRawgGame({
+      id: 1,
+      stores: [{ url: 'https://google.com' }],
+      genres: [],
+    });
+
+    expect(result.gameStores).toEqual([]);
+  });
+
+  it('RAWG detecta Steam', () => {
+    const result = normalizeRawgGame({
+      id: 1,
+      stores: [
+        {
+          url: 'https://store.steampowered.com/app/123',
+        },
+      ],
+      genres: [],
+    });
+
+    expect(result.gameStores.length).toBe(1);
+    expect(result.gameStores[0].label).toBe('Steam');
+  });
+
+  it('IGDB ignora website desconocido', () => {
+    const result = normalizeIgdbGame({
+      id: 1,
+      websites: [
+        {
+          url: 'https://google.com',
+        },
+      ],
+    });
+
+    expect(result.gameStores).toEqual([]);
+  });
+
+  it('IGDB detecta Steam', () => {
+    const result = normalizeIgdbGame({
+      id: 1,
+      websites: [
+        {
+          url: 'https://store.steampowered.com/app/123',
+        },
+      ],
+    });
+
+    expect(result.gameStores.length).toBe(1);
+  });
+
+  it('OpenLibrary usa subjects', () => {
+    const result = normalizeOpenLibraryBook({
+      key: '/works/OL1',
+      title: 'Libro',
+      subjects: ['A', 'B'],
+    });
+
+    expect(result.genres).toEqual(['A', 'B']);
+  });
+
+  it('OpenLibrary usa subject', () => {
+    const result = normalizeOpenLibraryBook({
+      key: '/works/OL1',
+      title: 'Libro',
+      subject: ['Drama'],
+    });
+
+    expect(result.genres).toEqual(['Drama']);
+  });
+
+  it('OpenLibrary sin subjects devuelve array vacío', () => {
+    const result = normalizeOpenLibraryBook({
+      key: '/works/OL1',
+      title: 'Libro',
+    });
+
+    expect(result.genres).toEqual([]);
+  });
+
+  it('Anime usa title_english', () => {
+    const result = normalizeJikanAnime({
+      mal_id: 1,
+      title_english: 'Naruto',
+    });
+
+    expect(result.title).toBe('Naruto');
+  });
+
+  it('Anime usa fallback Sin título', () => {
+    const result = normalizeJikanAnime({
+      mal_id: 1,
+    });
+
+    expect(result.title).toBe('Sin título');
+  });
+
 });
