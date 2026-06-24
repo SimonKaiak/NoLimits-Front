@@ -68,4 +68,38 @@ describe('Badge', () => {
       'nl-badge'
     );
   });
+
+  test('usa el valor type cuando no existe label ni traducción', () => {
+    render(
+      <Badge type="tipo-raro" />
+    );
+
+    assert.isNotNull(
+      screen.getByText('tipo-raro')
+    );
+  });
+
+  test('usa clase vacía cuando el tipo no existe en MEDIA_TYPE_BADGE_CLASS', () => {
+    render(
+      <Badge type="tipo-raro" />
+    );
+
+    const badge =
+      screen.getByText('tipo-raro');
+
+    assert.equal(
+      badge.className,
+      'nl-badge '
+    );
+  });
+
+  test('renderiza correctamente un badge de anime', () => {
+    render(
+      <Badge type="anime" />
+    );
+
+    assert.isNotNull(
+      screen.getByText('Anime')
+    );
+  });
 });
