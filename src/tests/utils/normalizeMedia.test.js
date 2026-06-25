@@ -672,9 +672,9 @@ describe('normalizeMedia', () => {
       id: 2,
       stores: [
         {
-          url: 'https://ejemplo.com/juego'
-        }
-      ]
+          url: 'https://ejemplo.com/juego',
+        },
+      ],
     });
 
     assert.deepEqual(game.gameStores, []);

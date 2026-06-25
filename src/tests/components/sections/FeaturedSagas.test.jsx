@@ -4,6 +4,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import FeaturedSagas from '@/components/sections/FeaturedSagas';
+import { searchMovies } from '@/services/tmdb';
 
 vi.mock('@/services/tmdb', () => ({
   searchMovies: vi.fn(() =>
@@ -97,5 +98,79 @@ describe('FeaturedSagas', () => {
     );
 
     assert.deepEqual(mockNavigate.mock.calls[0], ['/saga/Batman']);
+  });
+
+  test('muestra skeleton cuando no existe backdrop', () => {
+    renderFeaturedSagas();
+
+    const skeletons = document.querySelectorAll('.nl-skeleton');
+
+    assert.isAbove(skeletons.length, 0);
+  });
+
+  test('renderiza iconos de tipos de contenido', () => {
+    renderFeaturedSagas();
+
+    assert.isAbove(screen.getAllByText('Películas').length, 0);
+    assert.isAbove(screen.getAllByText('Series').length, 0);
+    assert.isAbove(screen.getAllByText('Anime').length, 0);
+    assert.isAbove(screen.getAllByText('Juegos').length, 0);
+    assert.isAbove(screen.getAllByText('Libros').length, 0);
+    assert.isAbove(screen.getAllByText('Música').length, 0);
+  });
+
+  test('renderiza numeración de sagas', () => {
+    renderFeaturedSagas();
+
+    assert.isNotNull(screen.getByText('01'));
+    assert.isNotNull(screen.getByText('02'));
+    assert.isNotNull(screen.getByText('03'));
+  });
+
+  test('renderiza todas las sagas configuradas', () => {
+    renderFeaturedSagas();
+
+    assert.isNotNull(screen.getByText('Harry Potter'));
+    assert.isNotNull(screen.getByText('The Last of Us'));
+    assert.isNotNull(screen.getByText('Attack on Titan'));
+  });
+
+  test('navega correctamente una saga con espacios', () => {
+    renderFeaturedSagas();
+
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: 'Explorar saga Harry Potter',
+      })
+    );
+
+    assert.deepEqual(
+      mockNavigate.mock.calls[0],
+      ['/saga/Harry%20Potter']
+    );
+  });
+
+  test('las sagas tienen tabindex para accesibilidad', () => {
+    renderFeaturedSagas();
+
+    const saga = screen.getByRole('button', {
+      name: 'Explorar saga Spider-Man',
+    });
+
+    assert.equal(saga.getAttribute('tabindex'), '0');
+  });
+
+  test('soporta respuesta vacía de TMDB', () => {
+    searchMovies.mockImplementationOnce(() =>
+      Promise.resolve({
+        results: [],
+      })
+    );
+
+    renderFeaturedSagas();
+
+    assert.isNotNull(
+      screen.getByText('Sagas destacadas · Explora el universo completo')
+    );
   });
 });

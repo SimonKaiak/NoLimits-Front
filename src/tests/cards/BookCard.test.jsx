@@ -142,4 +142,144 @@ describe('BookCard', () => {
 
     assert.deepEqual(mockToggleList.mock.calls[0], [obraMock]);
   });
+
+    test('usa imagen fallback cuando poster es null', () => {
+    renderBookCard({
+      obra: {
+        ...obraMock,
+        poster: null,
+      },
+    });
+
+    const img = screen.getByAltText('Portada de The Hobbit');
+
+    assert.include(
+      img.getAttribute('src'),
+      'data:image/svg+xml'
+    );
+  });
+
+  test('reemplaza imagen por fallback cuando ocurre error', () => {
+    renderBookCard();
+
+    const img = screen.getByAltText('Portada de The Hobbit');
+
+    fireEvent.error(img);
+
+    assert.include(
+      img.getAttribute('src'),
+      'data:image/svg+xml'
+    );
+  });
+
+  test('no muestra sinopsis cuando synopsis no existe', () => {
+    renderBookCard({
+      obra: {
+        ...obraMock,
+        synopsis: '',
+      },
+    });
+
+    assert.isNull(
+      screen.queryByText(/Bilbo Baggins/i)
+    );
+  });
+
+  test('no muestra badge rating cuando rating es guion', () => {
+    renderBookCard({
+      obra: {
+        ...obraMock,
+        rating: '—',
+      },
+    });
+
+    assert.isNull(
+      screen.queryByText('—')
+    );
+  });
+
+  test('permite guardar favoritos usando auth=true', () => {
+    localStorage.setItem('nl_token', 'token');
+    localStorage.setItem(
+      'nl_user',
+      JSON.stringify({
+        correo: 'correo@test.com',
+      })
+    );
+    localStorage.setItem('nl_auth', 'true');
+
+    renderBookCard();
+
+    fireEvent.click(
+      screen.getByLabelText('Agregar a favoritos')
+    );
+
+    assert.deepEqual(
+      mockToggleList.mock.calls[0],
+      [obraMock]
+    );
+  });
+
+  test('permite guardar favoritos usando email', () => {
+    localStorage.setItem('nl_token', 'token');
+    localStorage.setItem(
+      'nl_user',
+      JSON.stringify({
+        email: 'usuario@test.com',
+      })
+    );
+    localStorage.setItem('nl_auth', '1');
+
+    renderBookCard();
+
+    fireEvent.click(
+      screen.getByLabelText('Agregar a favoritos')
+    );
+
+    assert.deepEqual(
+      mockToggleList.mock.calls[0],
+      [obraMock]
+    );
+  });
+
+  test('considera inválido un usuario con json corrupto', () => {
+    const alertMock = vi
+      .spyOn(window, 'alert')
+      .mockImplementation(() => {});
+
+    localStorage.setItem('nl_token', 'token');
+    localStorage.setItem('nl_user', '{json-invalido');
+    localStorage.setItem('nl_auth', '1');
+
+    renderBookCard();
+
+    fireEvent.click(
+      screen.getByLabelText('Agregar a favoritos')
+    );
+
+    assert.deepEqual(
+      mockNavigate.mock.calls[0],
+      ['/login']
+    );
+
+    alertMock.mockRestore();
+  });
+
+  test('no navega cuando se presiona una tecla distinta de Enter', () => {
+    renderBookCard();
+
+    fireEvent.keyDown(
+      screen.getByRole('button', {
+        name: 'Ver The Hobbit',
+      }),
+      {
+        key: 'Escape',
+      }
+    );
+
+    assert.equal(
+      mockNavigate.mock.calls.length,
+      0
+    );
+  });
 });

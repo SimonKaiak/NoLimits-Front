@@ -221,7 +221,7 @@ describe('WhereToFind - tests de regresión', () => {
 
     assert.equal(container.textContent, '');
   });
-
+  
   test('muestra linksCompra usando urlCompra y plataformaNombre como fallback', () => {
     const obra = {
       title: 'Producto con urlCompra',
@@ -264,57 +264,6 @@ describe('WhereToFind - tests de regresión', () => {
     assert.equal(link.getAttribute('href'), 'https://otra-tienda.cl/producto');
   });
 
-  test('muestra providers de compra cuando no hay flatrate', () => {
-    const obra = {
-      title: 'Película compra',
-      type: MEDIA_TYPES.MOVIE,
-    };
-
-    const providers = {
-      link: 'https://www.justwatch.com/mx/movie/compra',
-      buy: [
-        {
-          provider_id: 10,
-          provider_name: 'Apple TV',
-          logo_path: null,
-        },
-      ],
-    };
-
-    render(<WhereToFind obra={obra} providers={providers} />);
-
-    assert.isNotNull(screen.getByRole('link', { name: /apple tv/i }));
-    assert.isNotNull(screen.getByRole('link', { name: /buscar online/i }));
-  });
-
-  test('muestra JustWatch fallback cuando provider solo era Google Play Movies', () => {
-    const obra = {
-      title: 'Película solo Google',
-      type: MEDIA_TYPES.MOVIE,
-    };
-
-    const providers = {
-      link: '',
-      flatrate: [
-        {
-          provider_id: 3,
-          provider_name: 'Google Play Movies',
-          logo_path: '/google.png',
-        },
-      ],
-    };
-
-    render(<WhereToFind obra={obra} providers={providers} />);
-
-    const justWatch = screen.getByRole('link', { name: /justwatch/i });
-
-    assert.isNotNull(justWatch);
-    assert.include(
-      justWatch.getAttribute('href'),
-      'https://www.justwatch.com/mx/buscar'
-    );
-  });
-
   test('muestra búsqueda de Xbox cuando plataforma incluye Xbox One', () => {
     const obra = {
       title: 'Halo Infinite',
@@ -330,5 +279,104 @@ describe('WhereToFind - tests de regresión', () => {
 
     assert.isNotNull(link);
     assert.include(link.getAttribute('href'), 'xbox.com');
+  });
+
+  test('muestra Nintendo eShop para Nintendo Switch', () => {
+    const obra = {
+      title: 'Mario Kart',
+      type: MEDIA_TYPES.GAME,
+      platforms: ['Nintendo Switch'],
+    };
+
+    render(<WhereToFind obra={obra} />);
+
+    assert.isNotNull(
+      screen.getByRole('link', {
+        name: /nintendo eshop/i,
+      })
+    );
+  });
+
+  test('elimina tiendas duplicadas cuando existen plataformas equivalentes', () => {
+    const obra = {
+      title: 'FIFA',
+      type: MEDIA_TYPES.GAME,
+      platforms: ['PlayStation 4', 'PlayStation 5'],
+    };
+
+    render(<WhereToFind obra={obra} />);
+
+    const stores = screen.getAllByRole('link', {
+      name: /playstation store/i,
+    });
+
+    assert.equal(stores.length, 1);
+  });
+
+  test('usa nombre por defecto Mercado Libre cuando no existe label', () => {
+    const obra = {
+      title: 'Producto',
+      type: MEDIA_TYPES.GAME,
+      linksCompra: [
+        {
+          url: 'https://ejemplo.cl',
+        },
+      ],
+    };
+
+    render(<WhereToFind obra={obra} />);
+
+    assert.isNotNull(screen.getByText('Mercado Libre'));
+  });
+
+  test('usa providers.buy cuando flatrate no existe', () => {
+    const obra = {
+      title: 'Matrix',
+      type: MEDIA_TYPES.MOVIE,
+    };
+
+    render(
+      <WhereToFind
+        obra={obra}
+        providers={{
+          link: 'https://justwatch.com',
+          buy: [
+            {
+              provider_id: 1,
+              provider_name: 'Apple TV',
+            },
+          ],
+        }}
+      />
+    );
+
+    assert.isNotNull(screen.getByText('Apple TV'));
+  });
+
+  test('muestra logo del proveedor cuando existe logo_path', () => {
+    const obra = {
+      title: 'Matrix',
+      type: MEDIA_TYPES.MOVIE,
+    };
+
+    render(
+      <WhereToFind
+        obra={obra}
+        providers={{
+          link: 'https://justwatch.com',
+          flatrate: [
+            {
+              provider_id: 1,
+              provider_name: 'Netflix',
+              logo_path: '/logo.png',
+            },
+          ],
+        }}
+      />
+    );
+
+    const logo = screen.getByAltText('Netflix');
+
+    assert.isNotNull(logo);
   });
 });

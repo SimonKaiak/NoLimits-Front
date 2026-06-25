@@ -108,4 +108,81 @@ describe('GameCard', () => {
 
     assert.deepEqual(mockToggleList.mock.calls[0], [obraMock]);
   });
+
+    test('usa imagen fallback cuando poster es null', () => {
+    renderGameCard({
+      obra: {
+        ...obraMock,
+        poster: null,
+      },
+    });
+
+    const img = screen.getByAltText(
+      'Poster de Grand Theft Auto V'
+    );
+
+    assert.include(
+      img.getAttribute('src'),
+      'data:image/svg+xml'
+    );
+  });
+
+  test('reemplaza imagen por fallback cuando ocurre error', () => {
+    renderGameCard();
+
+    const img = screen.getByAltText(
+      'Poster de Grand Theft Auto V'
+    );
+
+    fireEvent.error(img);
+
+    assert.include(
+      img.getAttribute('src'),
+      'data:image/svg+xml'
+    );
+  });
+
+  test('no muestra rating cuando rating es guion', () => {
+    renderGameCard({
+      obra: {
+        ...obraMock,
+        rating: '—',
+      },
+    });
+
+    assert.isNull(
+      screen.queryByText(/★/)
+    );
+  });
+
+  test('no muestra año cuando year es guion', () => {
+    renderGameCard({
+      obra: {
+        ...obraMock,
+        year: '—',
+      },
+    });
+
+    assert.isNull(
+      screen.queryByText('2013')
+    );
+  });
+
+  test('no navega cuando se presiona una tecla distinta de Enter', () => {
+    renderGameCard();
+
+    fireEvent.keyDown(
+      screen.getByRole('button', {
+        name: 'Ver Grand Theft Auto V',
+      }),
+      {
+        key: 'Escape',
+      }
+    );
+
+    assert.equal(
+      mockNavigate.mock.calls.length,
+      0
+    );
+  });
 });
