@@ -12,6 +12,7 @@ import {
   reaccionarReview,
 } from '@/services/reviewService';
 import { useSagaSearch } from '@/hooks/useSearch';
+import { fetchMovieProviders } from '@/services/whereToWatch';
 
 vi.mock('motion/react', () => ({
   motion: {

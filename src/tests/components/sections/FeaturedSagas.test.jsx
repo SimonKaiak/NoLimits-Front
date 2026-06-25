@@ -4,6 +4,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import FeaturedSagas from '@/components/sections/FeaturedSagas';
+import { searchMovies } from '@/services/tmdb';
 
 vi.mock('@/services/tmdb', () => ({
   searchMovies: vi.fn(() =>

@@ -1,11 +1,14 @@
 import { describe, test, beforeEach, afterEach, vi, assert } from "vitest";
 import useAppStore from "../../store/useAppStore";
 
+const initialState = useAppStore.getState();
+
 describe("useAppStore", () => {
-  beforeEach(() => {
+ beforeEach(() => {
     localStorage.clear();
 
     useAppStore.setState({
+      ...initialState,
       user: null,
       myList: [],
       reviews: {},
@@ -279,6 +282,130 @@ describe("useAppStore", () => {
       useAppStore.getState().toggleTheme();
 
       assert.equal(useAppStore.getState().theme, "dark");
+    });
+  });
+
+   describe("casos adicionales de errores y fallbacks", () => {
+    test("loadFavorites captura error si backend responde no ok distinto de 401/403", async () => {
+      const consoleErrorMock = vi
+        .spyOn(console, "error")
+        .mockImplementation(() => {});
+
+      localStorage.setItem("nl_token", "token");
+      localStorage.setItem("nl_userId", "10");
+
+      fetch.mockResolvedValueOnce({
+        ok: false,
+        status: 500,
+      });
+
+      await useAppStore.getState().loadFavorites();
+
+      assert.equal(consoleErrorMock.mock.calls.length, 1);
+      assert.deepEqual(useAppStore.getState().myList, []);
+
+      consoleErrorMock.mockRestore();
+    });
+
+    test("loadFavorites redirige si backend responde 403", async () => {
+      localStorage.setItem("nl_token", "token");
+      localStorage.setItem("nl_userId", "10");
+
+      fetch.mockResolvedValueOnce({
+        ok: false,
+        status: 403,
+      });
+
+      await useAppStore.getState().loadFavorites();
+
+      assert.equal(window.location.href, "/login");
+    });
+
+    test("addToList usa fallbacks titulo, tipo, poster y source frontend", async () => {
+      localStorage.setItem("nl_token", "token");
+      localStorage.setItem("nl_userId", "10");
+
+      fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({}),
+      });
+
+      const obra = {
+        id: "obra-1",
+        titulo: "Título fallback",
+        tipo: "movie",
+        poster: "poster-fallback.jpg",
+      };
+
+      await useAppStore.getState().addToList(obra);
+
+      const body = JSON.parse(fetch.mock.calls[0][1].body);
+
+      assert.deepEqual(body, {
+        obraId: "obra-1",
+        titulo: "Título fallback",
+        tipo: "movie",
+        poster: "poster-fallback.jpg",
+        source: "frontend",
+      });
+    });
+
+    test("addToList muestra mensaje por defecto si backend falla sin message", async () => {
+      localStorage.setItem("nl_token", "token");
+      localStorage.setItem("nl_userId", "10");
+
+      fetch.mockResolvedValueOnce({
+        ok: false,
+        json: async () => ({}),
+      });
+
+      await useAppStore.getState().addToList({
+        id: "obra-1",
+        title: "Matrix",
+      });
+
+      assert.equal(alert.mock.calls[0][0], "Error guardando favoritos");
+    });
+
+    test("addToList captura error inesperado y muestra alerta", async () => {
+      const consoleErrorMock = vi
+        .spyOn(console, "error")
+        .mockImplementation(() => {});
+
+      localStorage.setItem("nl_token", "token");
+      localStorage.setItem("nl_userId", "10");
+
+      fetch.mockRejectedValueOnce(new Error("Fallo red"));
+
+      await useAppStore.getState().addToList({
+        id: "obra-1",
+        title: "Matrix",
+      });
+
+      assert.equal(alert.mock.calls[0][0], "Error actualizando favoritos");
+      assert.equal(consoleErrorMock.mock.calls.length, 1);
+
+      consoleErrorMock.mockRestore();
+    });
+
+    test("removeFromList muestra alerta si backend falla", async () => {
+      const consoleErrorMock = vi
+        .spyOn(console, "error")
+        .mockImplementation(() => {});
+
+      localStorage.setItem("nl_token", "token");
+      localStorage.setItem("nl_userId", "10");
+
+      fetch.mockResolvedValueOnce({
+        ok: false,
+      });
+
+      await useAppStore.getState().removeFromList("movie-1");
+
+      assert.equal(alert.mock.calls[0][0], "No errrrrrrrrroooor favoritos");
+      assert.equal(consoleErrorMock.mock.calls.length, 1);
+
+      consoleErrorMock.mockRestore();
     });
   });
 });
