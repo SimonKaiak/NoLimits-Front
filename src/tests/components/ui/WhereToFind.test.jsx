@@ -221,21 +221,64 @@ describe('WhereToFind - tests de regresión', () => {
 
     assert.equal(container.textContent, '');
   });
-
-  test('muestra Xbox Store para plataforma Xbox One', () => {
+  
+  test('muestra linksCompra usando urlCompra y plataformaNombre como fallback', () => {
     const obra = {
-      title: 'Halo',
+      title: 'Producto con urlCompra',
+      type: MEDIA_TYPES.MOVIE,
+      linksCompra: [
+        {
+          urlCompra: 'https://tienda.cl/producto',
+          plataformaNombre: 'Tienda NoLimits',
+        },
+      ],
+    };
+
+    render(<WhereToFind obra={obra} />);
+
+    const link = screen.getByRole('link', { name: /tienda nolimits/i });
+
+    assert.isNotNull(link);
+    assert.equal(link.getAttribute('href'), 'https://tienda.cl/producto');
+  });
+
+  test('muestra linksCompra usando plataforma.nombre como fallback', () => {
+    const obra = {
+      title: 'Producto plataforma objeto',
+      type: MEDIA_TYPES.GAME,
+      linksCompra: [
+        {
+          url: 'https://otra-tienda.cl/producto',
+          plataforma: {
+            nombre: 'Otra Tienda',
+          },
+        },
+      ],
+    };
+
+    render(<WhereToFind obra={obra} />);
+
+    const link = screen.getByRole('link', { name: /otra tienda/i });
+
+    assert.isNotNull(link);
+    assert.equal(link.getAttribute('href'), 'https://otra-tienda.cl/producto');
+  });
+
+  test('muestra búsqueda de Xbox cuando plataforma incluye Xbox One', () => {
+    const obra = {
+      title: 'Halo Infinite',
       type: MEDIA_TYPES.GAME,
       platforms: ['Xbox One'],
     };
 
     render(<WhereToFind obra={obra} />);
 
-    assert.isNotNull(
-      screen.getByRole('link', {
-        name: /xbox store/i,
-      })
-    );
+    assert.isNotNull(screen.getByText('XB1'));
+
+    const link = screen.getByRole('link', { name: /xbox store/i });
+
+    assert.isNotNull(link);
+    assert.include(link.getAttribute('href'), 'xbox.com');
   });
 
   test('muestra Nintendo eShop para Nintendo Switch', () => {
@@ -270,49 +313,6 @@ describe('WhereToFind - tests de regresión', () => {
     assert.equal(stores.length, 1);
   });
 
-  test('usa urlCompra cuando link.url no existe', () => {
-    const obra = {
-      title: 'Producto',
-      type: MEDIA_TYPES.GAME,
-      linksCompra: [
-        {
-          urlCompra: 'https://ejemplo.cl/producto',
-          label: 'Tienda',
-        },
-      ],
-    };
-
-    render(<WhereToFind obra={obra} />);
-
-    const link = screen.getByRole('link', {
-      name: /tienda/i,
-    });
-
-    assert.equal(
-      link.getAttribute('href'),
-      'https://ejemplo.cl/producto'
-    );
-  });
-
-  test('usa plataformaNombre cuando label no existe', () => {
-    const obra = {
-      title: 'Producto',
-      type: MEDIA_TYPES.GAME,
-      linksCompra: [
-        {
-          url: 'https://ejemplo.cl',
-          plataformaNombre: 'Steam',
-        },
-      ],
-    };
-
-    render(<WhereToFind obra={obra} />);
-
-    assert.isNotNull(
-      screen.getByText('Steam')
-    );
-  });
-
   test('usa nombre por defecto Mercado Libre cuando no existe label', () => {
     const obra = {
       title: 'Producto',
@@ -326,9 +326,7 @@ describe('WhereToFind - tests de regresión', () => {
 
     render(<WhereToFind obra={obra} />);
 
-    assert.isNotNull(
-      screen.getByText('Mercado Libre')
-    );
+    assert.isNotNull(screen.getByText('Mercado Libre'));
   });
 
   test('usa providers.buy cuando flatrate no existe', () => {
@@ -352,9 +350,7 @@ describe('WhereToFind - tests de regresión', () => {
       />
     );
 
-    assert.isNotNull(
-      screen.getByText('Apple TV')
-    );
+    assert.isNotNull(screen.getByText('Apple TV'));
   });
 
   test('muestra logo del proveedor cuando existe logo_path', () => {
