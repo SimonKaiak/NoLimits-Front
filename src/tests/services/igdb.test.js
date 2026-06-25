@@ -39,6 +39,15 @@ describe('igdbImageUrl', () => {
       'https://images.igdb.com/igdb/image/upload/t_1080p/co1wyy.jpg'
     );
   });
+
+  test('mantiene url https aunque no contenga t_thumb', () => {
+    const url = '//images.igdb.com/igdb/image/upload/t_cover_big/co1wyy.jpg';
+
+    assert.equal(
+      igdbImageUrl(url, 't_720p'),
+      'https://images.igdb.com/igdb/image/upload/t_cover_big/co1wyy.jpg'
+    );
+  });
 });
 
 describe('IGDB services', () => {
@@ -168,5 +177,21 @@ describe('IGDB services', () => {
     const result = await fetchGameDetail(9999);
 
     assert.isNull(result);
+  });
+
+  test('searchGames permite query normal sin comillas', async () => {
+    apiFetch.mockResolvedValue([]);
+
+    await searchGames('Mario');
+
+    assert.include(apiFetch.mock.calls[0][1].body, 'search "Mario"');
+  });
+
+  test('searchGameSeries permite saga normal sin comillas', async () => {
+    apiFetch.mockResolvedValue([]);
+
+    await searchGameSeries('Metroid');
+
+    assert.include(apiFetch.mock.calls[0][1].body, 'search "Metroid"');
   });
 });
