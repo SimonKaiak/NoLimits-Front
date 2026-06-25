@@ -675,4 +675,361 @@ describe('productos service - tests de regresión', () => {
       source: 'nolimits',
     });
   });
+
+  test('listarProductos maneja respuesta vacía y usa content/totalPages', async () => {
+    global.fetch.mockResolvedValueOnce({
+      ok: true,
+      text: async () =>
+        JSON.stringify({
+          content: [{ id: 3, nombre: 'Producto content' }],
+          totalPages: 1,
+        }),
+    });
+
+    const result = await listarProductos({ force: true });
+
+    assert.deepEqual(result, [{ id: 3, nombre: 'Producto content' }]);
+  });
+
+  test('listarProductos maneja body vacío como lista vacía', async () => {
+    global.fetch.mockResolvedValueOnce({
+      ok: true,
+      text: async () => '',
+    });
+
+    const result = await listarProductos({ force: true });
+
+    assert.deepEqual(result, []);
+  });
+
+  test('listarProductosPaginado usa valores fallback cuando faltan metadatos', async () => {
+    global.fetch.mockResolvedValueOnce({
+      ok: true,
+      text: async () =>
+        JSON.stringify({
+          contenido: [{ id: 7, nombre: 'Sin metadata' }],
+        }),
+    });
+
+    const result = await listarProductosPaginado('abc', 5);
+
+    assert.deepEqual(result, {
+      content: [{ id: 7, nombre: 'Sin metadata' }],
+      page: 1,
+      totalPages: 1,
+      totalElements: 1,
+    });
+  });
+
+  test('eliminarProducto maneja error si text falla y usa mensaje por defecto', async () => {
+    global.fetch.mockResolvedValueOnce({
+      ok: false,
+      text: async () => {
+        throw new Error('No text');
+      },
+    });
+
+    try {
+      await eliminarProducto(99);
+      assert.fail('Debía lanzar error');
+    } catch (error) {
+      assert.equal(error.message, 'Error al eliminar producto');
+    }
+  });
+
+  test('obtenerProductosPorSaga retorna vacío si nombreSaga no es string o saga no es string', async () => {
+    global.fetch.mockResolvedValueOnce({
+      ok: true,
+      text: async () =>
+        JSON.stringify({
+          contenido: [
+            { id: 1, nombre: 'Producto sin saga', saga: null },
+            { id: 2, nombre: 'Producto con saga', saga: 'Zelda' },
+          ],
+          totalPaginas: 1,
+        }),
+    });
+
+    const result = await obtenerProductosPorSaga(null);
+
+    assert.deepEqual(result, []);
+  });
+
+  test('actualizarPrecioSteam envía headers sin Authorization cuando no hay token', async () => {
+    global.fetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ id: 2, precio: 12990 }),
+    });
+
+    const result = await actualizarPrecioSteam(2);
+
+    assert.deepEqual(result, { id: 2, precio: 12990 });
+    assert.equal(global.fetch.mock.calls[0][1].method, 'PATCH');
+    assert.equal(global.fetch.mock.calls[0][1].headers.Authorization, undefined);
+  });
+
+  test('guardarProducto lanza mensaje por defecto si backend falla sin texto', async () => {
+    global.fetch.mockResolvedValueOnce({
+      ok: false,
+      text: async () => '',
+    });
+
+    try {
+      await editarProductoPut(5, { nombre: 'Fallido' });
+      assert.fail('Debía lanzar error');
+    } catch (error) {
+      assert.equal(error.message, 'Error al editar producto');
+    }
+  });
+
+  test('adaptarProductoNoLimits usa portadaSaga, imagen, urlImagen y tipo por defecto', () => {
+    const conPortadaSaga = adaptarProductoNoLimits({
+      id: 1,
+      nombre: 'Producto saga',
+      portadaSaga: 'portada-saga.jpg',
+      tipoProductoNombre: 'Otro',
+    });
+
+    const conImagen = adaptarProductoNoLimits({
+      id: 2,
+      nombre: 'Producto imagen',
+      imagen: 'imagen.jpg',
+    });
+
+    const conUrlImagen = adaptarProductoNoLimits({
+      id: 3,
+      nombre: 'Producto url',
+      urlImagen: 'url-imagen.jpg',
+    });
+
+    assert.include(conPortadaSaga, {
+      id: 'nolimits-1',
+      type: 'game',
+      image: 'portada-saga.jpg',
+      poster: 'portada-saga.jpg',
+    });
+
+    assert.equal(conImagen.image, 'imagen.jpg');
+    assert.equal(conUrlImagen.image, 'url-imagen.jpg');
+  });
+
+  test('obtenerTiposProducto y obtenerEstadosProducto retornan [] si JSON es inválido', async () => {
+    global.fetch
+      .mockResolvedValueOnce({
+        ok: true,
+        text: async () => 'no-json',
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        text: async () => 'no-json',
+      });
+
+    assert.deepEqual(await obtenerTiposProducto(), []);
+    assert.deepEqual(await obtenerEstadosProducto(), []);
+  });
+
+  test('obtenerClasificaciones lanza error si respuesta no es ok', async () => {
+    global.fetch.mockResolvedValueOnce({
+      ok: false,
+      status: 500,
+      text: async () => 'Error clasificaciones',
+    });
+
+    try {
+      await obtenerClasificaciones();
+      assert.fail('Debía lanzar error');
+    } catch (error) {
+      assert.include(error.message, 'Status 500 -> Error clasificaciones');
+    }
+  });
+
+  test('obtenerEstadosProducto lanza error si respuesta no es ok', async () => {
+    global.fetch.mockResolvedValueOnce({
+      ok: false,
+      status: 500,
+      text: async () => 'Error estados',
+    });
+
+    try {
+      await obtenerEstadosProducto();
+      assert.fail('Debía lanzar error');
+    } catch (error) {
+      assert.include(error.message, 'Status 500 -> Error estados');
+    }
+  });
+
+  test('catálogo paginado lanza error por defecto si backend falla sin texto', async () => {
+    const errorMock = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    global.fetch.mockResolvedValueOnce({
+      ok: false,
+      status: 500,
+      text: async () => '',
+    });
+
+    try {
+      await obtenerGeneros();
+      assert.fail('Debía lanzar error');
+    } catch (error) {
+      assert.equal(error.message, 'Error cargando GENEROS');
+    }
+
+    errorMock.mockRestore();
+  });
+
+  test('crearProducto lanza mensaje por defecto si backend falla sin texto', async () => {
+    global.fetch.mockResolvedValueOnce({
+      ok: false,
+      text: async () => '',
+    });
+
+    try {
+      await crearProducto({ nombre: 'Fallido' });
+      assert.fail('Debía lanzar error');
+    } catch (error) {
+      assert.equal(error.message, 'Error al crear producto');
+    }
+  });
+
+  test('editarProducto lanza mensaje por defecto si backend falla sin texto', async () => {
+    global.fetch.mockResolvedValueOnce({
+      ok: false,
+      text: async () => '',
+    });
+
+    try {
+      await editarProducto(1, { nombre: 'Fallido' });
+      assert.fail('Debía lanzar error');
+    } catch (error) {
+      assert.equal(error.message, 'Error al editar producto');
+    }
+  });
+
+  test('actualizarPrecioSteam lanza mensaje por defecto si backend falla sin texto', async () => {
+    global.fetch.mockResolvedValueOnce({
+      ok: false,
+      text: async () => '',
+    });
+
+    try {
+      await actualizarPrecioSteam(1);
+      assert.fail('Debía lanzar error');
+    } catch (error) {
+      assert.equal(error.message, 'Error al actualizar precio desde Steam');
+    }
+  });
+
+  test('fetchCatalogoPaged retorna [] si respuesta no tiene content ni contenido', async () => {
+    global.fetch.mockResolvedValueOnce({
+      ok: true,
+      text: async () => JSON.stringify({ otraCosa: [] }),
+    });
+
+    const result = await obtenerEmpresas();
+
+    assert.deepEqual(result, []);
+  });
+
+  test('buscarProductosNoLimits maneja productos con campos faltantes', async () => {
+    global.fetch
+      .mockResolvedValueOnce({
+        ok: true,
+        text: async () => JSON.stringify({ id: 99 }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        text: async () =>
+          JSON.stringify({
+            contenido: [
+              {
+                id: 1,
+                nombre: null,
+                tipoProductoNombre: null,
+                saga: null,
+              },
+              {
+                id: 2,
+                nombre: 'Producto válido',
+                tipoProductoNombre: 'Videojuego',
+                saga: 'Saga válida',
+              },
+            ],
+            totalPaginas: 1,
+          }),
+      });
+
+    await crearProducto({ nombre: 'Limpia cache' });
+
+    const result = await buscarProductosNoLimits('videojuego');
+
+    assert.lengthOf(result, 1);
+    assert.equal(result[0].title, 'Producto válido');
+  });
+
+  test('listarProductosPaginado retorna content vacío si no viene content ni contenido', async () => {
+    global.fetch.mockResolvedValueOnce({
+      ok: true,
+      text: async () =>
+        JSON.stringify({
+          page: 2,
+          totalPages: 3,
+          totalElements: 0,
+        }),
+    });
+
+    const result = await listarProductosPaginado(2, 5);
+
+    assert.deepEqual(result, {
+      content: [],
+      page: 2,
+      totalPages: 3,
+      totalElements: 0,
+    });
+  });
+
+  test('obtenerSagas normaliza nombre no string como vacío y lo filtra', async () => {
+    global.fetch.mockResolvedValueOnce({
+      ok: true,
+      text: async () =>
+        JSON.stringify([
+          { nombre: 123, portadaSaga: 'portada.jpg' },
+          { nombre: 'Saga válida', portadaSaga: null },
+        ]),
+    });
+
+    const result = await obtenerSagas();
+
+    assert.deepEqual(result, [
+      {
+        nombre: 'Saga válida',
+        portadaSaga: null,
+      },
+    ]);
+  });
+
+  test('obtenerProductosPorSaga maneja productos con saga no string', async () => {
+    global.fetch
+      .mockResolvedValueOnce({
+        ok: true,
+        text: async () => JSON.stringify({ id: 99 }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        text: async () =>
+          JSON.stringify({
+            contenido: [
+              { id: 1, nombre: 'Sin saga string', saga: 123 },
+              { id: 2, nombre: 'Saga correcta', saga: 'Metroid' },
+            ],
+            totalPaginas: 1,
+          }),
+      });
+
+    await crearProducto({ nombre: 'Limpia cache' });
+
+    const result = await obtenerProductosPorSaga('metroid');
+
+    assert.lengthOf(result, 1);
+    assert.equal(result[0].nombre, 'Saga correcta');
+  });
 });

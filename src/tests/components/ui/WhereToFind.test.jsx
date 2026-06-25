@@ -221,4 +221,114 @@ describe('WhereToFind - tests de regresión', () => {
 
     assert.equal(container.textContent, '');
   });
+
+  test('muestra linksCompra usando urlCompra y plataformaNombre como fallback', () => {
+    const obra = {
+      title: 'Producto con urlCompra',
+      type: MEDIA_TYPES.MOVIE,
+      linksCompra: [
+        {
+          urlCompra: 'https://tienda.cl/producto',
+          plataformaNombre: 'Tienda NoLimits',
+        },
+      ],
+    };
+
+    render(<WhereToFind obra={obra} />);
+
+    const link = screen.getByRole('link', { name: /tienda nolimits/i });
+
+    assert.isNotNull(link);
+    assert.equal(link.getAttribute('href'), 'https://tienda.cl/producto');
+  });
+
+  test('muestra linksCompra usando plataforma.nombre como fallback', () => {
+    const obra = {
+      title: 'Producto plataforma objeto',
+      type: MEDIA_TYPES.GAME,
+      linksCompra: [
+        {
+          url: 'https://otra-tienda.cl/producto',
+          plataforma: {
+            nombre: 'Otra Tienda',
+          },
+        },
+      ],
+    };
+
+    render(<WhereToFind obra={obra} />);
+
+    const link = screen.getByRole('link', { name: /otra tienda/i });
+
+    assert.isNotNull(link);
+    assert.equal(link.getAttribute('href'), 'https://otra-tienda.cl/producto');
+  });
+
+  test('muestra providers de compra cuando no hay flatrate', () => {
+    const obra = {
+      title: 'Película compra',
+      type: MEDIA_TYPES.MOVIE,
+    };
+
+    const providers = {
+      link: 'https://www.justwatch.com/mx/movie/compra',
+      buy: [
+        {
+          provider_id: 10,
+          provider_name: 'Apple TV',
+          logo_path: null,
+        },
+      ],
+    };
+
+    render(<WhereToFind obra={obra} providers={providers} />);
+
+    assert.isNotNull(screen.getByRole('link', { name: /apple tv/i }));
+    assert.isNotNull(screen.getByRole('link', { name: /buscar online/i }));
+  });
+
+  test('muestra JustWatch fallback cuando provider solo era Google Play Movies', () => {
+    const obra = {
+      title: 'Película solo Google',
+      type: MEDIA_TYPES.MOVIE,
+    };
+
+    const providers = {
+      link: '',
+      flatrate: [
+        {
+          provider_id: 3,
+          provider_name: 'Google Play Movies',
+          logo_path: '/google.png',
+        },
+      ],
+    };
+
+    render(<WhereToFind obra={obra} providers={providers} />);
+
+    const justWatch = screen.getByRole('link', { name: /justwatch/i });
+
+    assert.isNotNull(justWatch);
+    assert.include(
+      justWatch.getAttribute('href'),
+      'https://www.justwatch.com/mx/buscar'
+    );
+  });
+
+  test('muestra búsqueda de Xbox cuando plataforma incluye Xbox One', () => {
+    const obra = {
+      title: 'Halo Infinite',
+      type: MEDIA_TYPES.GAME,
+      platforms: ['Xbox One'],
+    };
+
+    render(<WhereToFind obra={obra} />);
+
+    assert.isNotNull(screen.getByText('XB1'));
+
+    const link = screen.getByRole('link', { name: /xbox store/i });
+
+    assert.isNotNull(link);
+    assert.include(link.getAttribute('href'), 'xbox.com');
+  });
 });

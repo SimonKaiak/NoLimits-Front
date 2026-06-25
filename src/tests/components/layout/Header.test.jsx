@@ -163,4 +163,87 @@ describe("Header", () => {
       assert.equal(navigateMock.mock.calls[0][0], "/");
     });
   });
+
+  describe("casos adicionales", () => {
+    test("no deberia mostrar contador si usuario esta autenticado pero la lista esta vacia", () => {
+      useAppStore.setState({
+        user: {
+          id: 1,
+          name: "Usuario Demo",
+          email: "usuario.demo@test.com",
+        },
+        myList: [],
+        clearUser: vi.fn(),
+      });
+
+      renderHeader();
+
+      assert.ok(screen.getByText("Mi biblioteca"));
+      assert.equal(screen.queryByText("0"), null);
+    });
+
+    test("no deberia mostrar contador si no hay usuario aunque existan obras en biblioteca", () => {
+      useAppStore.setState({
+        user: null,
+        myList: [
+          { id: "obra-1", title: "Obra 1" },
+          { id: "obra-2", title: "Obra 2" },
+        ],
+        clearUser: vi.fn(),
+      });
+
+      renderHeader();
+
+      assert.ok(screen.getByText("Mi biblioteca"));
+      assert.equal(screen.queryByText("2"), null);
+    });
+
+    test("mantiene busqueda abierta al hacer click dentro del contenedor de busqueda", () => {
+      renderHeader();
+
+      fireEvent.click(screen.getByLabelText("Abrir búsqueda"));
+
+      assert.ok(screen.getByText("SearchBar Compacta"));
+
+      fireEvent.mouseDown(screen.getByText("SearchBar Compacta"));
+
+      assert.ok(screen.getByText("SearchBar Compacta"));
+    });
+
+    test("marca como activo el enlace Descubrir cuando esta en home", () => {
+      render(
+        <MemoryRouter initialEntries={["/"]}>
+          <Header />
+        </MemoryRouter>
+      );
+
+      const descubrir = screen.getByText("Descubrir");
+
+      assert.include(descubrir.className, "nl-header__nav-link--active");
+    });
+
+    test("marca como activo el enlace Sagas cuando esta en /saga", () => {
+      render(
+        <MemoryRouter initialEntries={["/saga"]}>
+          <Header />
+        </MemoryRouter>
+      );
+
+      const sagas = screen.getByText("Sagas");
+
+      assert.include(sagas.className, "nl-header__nav-link--active");
+    });
+
+    test("marca como activo el enlace Mi biblioteca cuando esta en /my-list", () => {
+      render(
+        <MemoryRouter initialEntries={["/my-list"]}>
+          <Header />
+        </MemoryRouter>
+      );
+
+      const biblioteca = screen.getByText("Mi biblioteca");
+
+      assert.include(biblioteca.className, "nl-header__nav-link--active");
+    });
+  }); 
 });

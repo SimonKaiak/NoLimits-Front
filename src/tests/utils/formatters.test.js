@@ -6,6 +6,8 @@ import {
   formatDuration,
   truncateText,
   formatGenres,
+  buildTmdbImageUrl,
+  buildOpenLibraryCoverUrl,
   buildMediaId,
   mediaIdToSlug,
   parseMediaSlug,
@@ -98,5 +100,64 @@ describe('formatters', () => {
         nativeId: '10',
       }
     );
+  });
+
+  test('formatDuration retorna guion para valores vacíos o inválidos', () => {
+    assert.equal(formatDuration(0), '—');
+    assert.equal(formatDuration(null), '—');
+    assert.equal(formatDuration(-5), '—');
+  });
+
+  test('truncateText retorna vacío si no recibe texto', () => {
+    assert.equal(truncateText(null), '');
+    assert.equal(truncateText(''), '');
+  });
+
+  test('buildTmdbImageUrl retorna null sin path y arma URL con tamaño por defecto', () => {
+    assert.isNull(buildTmdbImageUrl(null));
+
+    const url = buildTmdbImageUrl('/poster.jpg');
+
+    assert.include(url, '/w342/poster.jpg');
+  });
+
+  test('buildTmdbImageUrl permite tamaño personalizado', () => {
+    const url = buildTmdbImageUrl('/poster.jpg', 'w500');
+
+    assert.include(url, '/w500/poster.jpg');
+  });
+
+  test('buildOpenLibraryCoverUrl retorna null sin coverId y arma URL con tamaño por defecto', () => {
+    assert.isNull(buildOpenLibraryCoverUrl(null));
+
+    const url = buildOpenLibraryCoverUrl(123);
+
+    assert.include(url, '/b/id/123-M.jpg');
+  });
+
+  test('buildOpenLibraryCoverUrl permite tamaño personalizado', () => {
+    const url = buildOpenLibraryCoverUrl(123, 'L');
+
+    assert.include(url, '/b/id/123-L.jpg');
+  });
+
+  test('mediaIdToSlug retorna vacío si no recibe mediaId', () => {
+    assert.equal(mediaIdToSlug(null), '');
+  });
+
+  test('parseMediaSlug retorna objeto vacío si no recibe slug', () => {
+    assert.deepEqual(parseMediaSlug(null), {
+      source: '',
+      type: '',
+      nativeId: '',
+    });
+  });
+
+  test('parseMediaSlug maneja slug incompleto', () => {
+    assert.deepEqual(parseMediaSlug('tmdb'), {
+      source: 'tmdb',
+      type: '',
+      nativeId: '',
+    });
   });
 });

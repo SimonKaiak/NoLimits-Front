@@ -12,6 +12,7 @@ import {
   reaccionarReview,
 } from '@/services/reviewService';
 import { useSagaSearch } from '@/hooks/useSearch';
+import { fetchMovieProviders } from '@/services/whereToWatch';
 
 vi.mock('motion/react', () => ({
   motion: {
@@ -985,5 +986,71 @@ describe('Detail - tests de regresión', () => {
     assert.deepEqual(window.alert.mock.calls[0], [
       'Debes iniciar sesión',
     ]);
+  });
+
+  test('muestra error cuando el tipo de media no es soportado', () => {
+    parseMediaSlug.mockReturnValue({
+      source: 'desconocido',
+      type: 'otro',
+      nativeId: '999',
+    });
+
+    renderDetail();
+
+    assert.isNotNull(screen.getByText(/No se pudo cargar esta obra/i));
+    assert.isNotNull(screen.getByText(/desconocido\/otro\/999/i));
+  });
+
+  test('renderiza providers de streaming cuando existen opciones', async () => {
+    parseMediaSlug.mockReturnValue({
+      source: 'tmdb',
+      type: 'movie',
+      nativeId: '123',
+    });
+
+    fetchMovieProviders.mockResolvedValueOnce({
+      flatrate: [
+        {
+          provider_id: 8,
+          provider_name: 'Netflix',
+          logo_path: '/netflix.png',
+        },
+      ],
+      link: 'https://www.justwatch.com',
+    });
+
+    renderDetail();
+
+    assert.isNotNull(await screen.findByText('Netflix'));
+    assert.isNotNull(screen.getByText('Streaming'));
+  });
+
+  test('carga producto NoLimits usando imagen simple, géneros string y sinopsis por defecto', async () => {
+    parseMediaSlug.mockReturnValue({
+      source: 'nolimits',
+      type: 'producto',
+      nativeId: '11',
+    });
+
+    obtenerProducto.mockResolvedValue({
+      id: 11,
+      nombre: 'Producto Simple',
+      tipoProductoNombre: null,
+      imagen: 'producto.jpg',
+      anio: null,
+      generos: ['Drama'],
+      plataformas: ['Web'],
+      sinopsis: '',
+      saga: null,
+      linksCompra: [],
+    });
+
+    renderDetail();
+
+    assert.isNotNull(await screen.findByText('Producto Simple'));
+    assert.isNotNull(screen.getByText('Drama'));
+    assert.isNotNull(screen.getByText('Web'));
+    assert.isNotNull(screen.getByText('—'));
+    assert.isNotNull(screen.getByText(/Sin sinopsis disponible/i));
   });
 });

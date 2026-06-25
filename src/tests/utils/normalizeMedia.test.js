@@ -308,4 +308,383 @@ describe('normalizeMedia', () => {
     assert.equal(book.poster, '/img/fallbacks/book-fallback.webp');
     assert.equal(book.backdrop, '/img/fallbacks/book-fallback.webp');
   });
+
+  test('normaliza película TMDB con original_title, genre_ids y fallbacks', () => {
+    const movie = normalizeTmdbMovie({
+      id: 10,
+      original_title: 'Original Movie',
+      release_date: '',
+      vote_average: 0,
+      genre_ids: [28, 12],
+    });
+
+    assert.include(movie, {
+      id: 'tmdb:movie:10',
+      title: 'Original Movie',
+      year: '—',
+      rating: '—',
+      voteCount: 0,
+      synopsis: '',
+      saga: null,
+      poster: '/img/fallbacks/movie-tvshow-fallback.webp',
+      backdrop: '/img/fallbacks/movie-tvshow-fallback.webp',
+    });
+
+    assert.deepEqual(movie.genres, ['28', '12']);
+  });
+
+  test('normaliza serie TMDB con original_name, genre_ids y sin networks', () => {
+    const series = normalizeTmdbSeries({
+      id: 20,
+      original_name: 'Original Series',
+      first_air_date: '',
+      vote_average: 0,
+      genre_ids: [18, 80],
+    });
+
+    assert.include(series, {
+      id: 'tmdb:series:20',
+      title: 'Original Series',
+      year: '—',
+      rating: '—',
+      voteCount: 0,
+      synopsis: '',
+      poster: '/img/fallbacks/movie-tvshow-fallback.webp',
+      backdrop: '/img/fallbacks/movie-tvshow-fallback.webp',
+    });
+
+    assert.deepEqual(series.genres, ['18', '80']);
+    assert.deepEqual(series.platforms, []);
+  });
+
+  test('normaliza anime Jikan usando title, fecha aired, imagen normal y fallback de backdrop', () => {
+    const anime = normalizeJikanAnime({
+      mal_id: 2,
+      title: 'Anime sin título inglés',
+      aired: { from: '2001-04-01' },
+      score: 0,
+      images: {
+        jpg: {
+          image_url: 'https://cdn.example.com/anime.jpg',
+        },
+      },
+    });
+
+    assert.include(anime, {
+      id: 'jikan:anime:2',
+      title: 'Anime sin título inglés',
+      year: '2001',
+      rating: '—',
+      poster: 'https://cdn.example.com/anime.jpg',
+      backdrop: '/img/fallbacks/movie-tvshow-fallback.webp',
+      synopsis: '',
+    });
+
+    assert.deepEqual(anime.genres, []);
+    assert.deepEqual(anime.platforms, []);
+  });
+
+  test('normaliza OpenLibrary usando edition_key, first_sentence y subject', () => {
+    const book = normalizeOpenLibraryBook({
+      edition_key: ['OL123M'],
+      title: '',
+      first_publish_date: '2005',
+      cover_edition_key: 'OLCOVER',
+      first_sentence: { value: 'Primera frase.' },
+      subject: ['Drama', 'Misterio', 'Aventura', 'Clásico', 'Ficción', 'Extra'],
+    });
+
+    assert.include(book, {
+      id: 'openlibrary:book:OL123M',
+      title: 'Sin título',
+      year: '2005',
+      synopsis: 'Primera frase.',
+    });
+
+    assert.deepEqual(book.genres, [
+      'Drama',
+      'Misterio',
+      'Aventura',
+      'Clásico',
+      'Ficción',
+    ]);
+  });
+
+  test('normaliza IGDB con tienda no reconocida y franchise como saga', () => {
+    const game = normalizeIgdbGame({
+      id: 30,
+      name: '',
+      first_release_date: null,
+      rating: null,
+      franchise: { name: 'Franquicia Test' },
+      websites: [{ url: 'https://pagina-no-reconocida.com/game' }],
+    });
+
+    assert.include(game, {
+      id: 'igdb:game:30',
+      title: 'Sin título',
+      year: '—',
+      rating: '—',
+      poster: '/img/fallbacks/videogame-fallback.webp',
+      backdrop: '/img/fallbacks/videogame-fallback.webp',
+      synopsis: '',
+      saga: 'Franquicia Test',
+    });
+
+    assert.deepEqual(game.gameStores, []);
+  });
+
+  test('normaliza RAWG con description, fallback de backdrop y stores inválidos', () => {
+    const game = normalizeRawgGame({
+      id: 40,
+      name: '',
+      released: '',
+      rating: 0,
+      background_image: 'https://img.com/game.jpg',
+      description: 'Descripción HTML',
+      platforms: [{ name: 'PlayStation 5' }],
+      stores: [
+        { url: '' },
+        { store: { domain: 'store.steampowered.com' } },
+      ],
+    });
+
+    assert.include(game, {
+      id: 'rawg:game:40',
+      title: 'Sin título',
+      year: '—',
+      rating: '—',
+      poster: 'https://img.com/game.jpg',
+      backdrop: 'https://img.com/game.jpg',
+      synopsis: 'Descripción HTML',
+    });
+
+    assert.deepEqual(game.platforms, ['PlayStation 5']);
+    assert.deepEqual(game.gameStores, []);
+  });
+
+  test('normaliza MusicBrainz usando name, artist-credit y primary-type como fallbacks', () => {
+    const musicByName = normalizeMusicBrainzRelease({
+      id: 'mb-name',
+      name: 'Nombre release',
+      'first-release-date': '2020-01-01',
+      'primary-type': 'Album',
+    });
+
+    const musicByArtist = normalizeMusicBrainzRelease({
+      id: 'mb-artist',
+      'artist-credit': [{ artist: { name: 'Artista Test' } }],
+    });
+
+    assert.include(musicByName, {
+      title: 'Nombre release',
+      year: '2020',
+      rating: '—',
+      synopsis: 'Album',
+    });
+
+    assert.include(musicByArtist, {
+      title: 'Artista Test',
+      year: '—',
+      rating: '—',
+      synopsis: '',
+    });
+  });
+
+  test('normaliza película TMDB sin title ni original_title y sin géneros', () => {
+    const movie = normalizeTmdbMovie({
+      id: 50,
+      vote_count: null,
+      release_date: 'fecha-mala',
+      vote_average: null,
+    });
+
+    assert.include(movie, {
+      id: 'tmdb:movie:50',
+      title: 'Sin título',
+      year: '—',
+      rating: '—',
+      voteCount: 0,
+      synopsis: '',
+      saga: null,
+      poster: '/img/fallbacks/movie-tvshow-fallback.webp',
+      backdrop: '/img/fallbacks/movie-tvshow-fallback.webp',
+    });
+
+    assert.deepEqual(movie.genres, []);
+  });
+
+  test('normaliza serie TMDB sin name ni original_name y sin géneros', () => {
+    const series = normalizeTmdbSeries({
+      id: 60,
+      vote_count: null,
+      first_air_date: 'fecha-mala',
+      vote_average: null,
+    });
+
+    assert.include(series, {
+      id: 'tmdb:series:60',
+      title: 'Sin título',
+      year: '—',
+      rating: '—',
+      voteCount: 0,
+      synopsis: '',
+      poster: '/img/fallbacks/movie-tvshow-fallback.webp',
+      backdrop: '/img/fallbacks/movie-tvshow-fallback.webp',
+    });
+
+    assert.deepEqual(series.genres, []);
+    assert.deepEqual(series.platforms, []);
+  });
+
+  test('normaliza anime Jikan con title fallback y trailer como backdrop', () => {
+    const anime = normalizeJikanAnime({
+      mal_id: 70,
+      score: null,
+      title: '',
+      trailer: {
+        images: {
+          maximum_image_url: 'https://cdn.example.com/trailer.jpg',
+        },
+      },
+    });
+
+    assert.include(anime, {
+      id: 'jikan:anime:70',
+      title: 'Sin título',
+      year: '—',
+      rating: '—',
+      poster: '/img/fallbacks/movie-tvshow-fallback.webp',
+      backdrop: 'https://cdn.example.com/trailer.jpg',
+      synopsis: '',
+    });
+
+    assert.deepEqual(anime.genres, []);
+    assert.deepEqual(anime.platforms, []);
+  });
+
+  test('normaliza OpenLibrary usando cover de covers y descripción string', () => {
+    const book = normalizeOpenLibraryBook({
+      id: 'book-test',
+      covers: [777],
+      title: 'Libro con covers',
+      first_publish_date: '2010',
+      description: 'Descripción simple',
+    });
+
+    assert.include(book, {
+      title: 'Libro con covers',
+      year: '2010',
+      synopsis: 'Descripción simple',
+    });
+
+    assert.include(book.poster, '777-L.jpg');
+    assert.include(book.backdrop, '777-L.jpg');
+  });
+
+  test('normaliza OpenLibrary sin key, edition_key ni cover usando fallback aleatorio', () => {
+    const book = normalizeOpenLibraryBook({
+      title: 'Libro fallback total',
+      description: '',
+      first_sentence: 'Primera frase string',
+    });
+
+    assert.equal(book.type, 'book');
+    assert.equal(book.title, 'Libro fallback total');
+    assert.equal(book.synopsis, 'Primera frase string');
+    assert.equal(book.poster, '/img/fallbacks/book-fallback.webp');
+    assert.equal(book.backdrop, '/img/fallbacks/book-fallback.webp');
+  });
+
+  test('normaliza IGDB con tiendas Steam y Epic reconocidas', () => {
+    const game = normalizeIgdbGame({
+      id: 80,
+      name: 'Juego tiendas',
+      websites: [
+        { url: 'https://store.steampowered.com/app/123' },
+        { url: 'https://www.epicgames.com/store/game' },
+      ],
+    });
+
+    assert.lengthOf(game.gameStores, 2);
+    assert.equal(game.gameStores[0].label, 'Steam');
+    assert.equal(game.gameStores[1].label, 'Epic Games');
+  });
+
+  test('normaliza RAWG con stores sin url pero con domain no http', () => {
+    const game = normalizeRawgGame({
+      id: 90,
+      stores: [
+        {
+          store: {
+            domain: 'store.steampowered.com',
+          },
+        },
+      ],
+      platforms: [
+        {
+          name: null,
+        },
+      ],
+    });
+
+    assert.deepEqual(game.gameStores, []);
+    assert.deepEqual(game.platforms, ['']);
+  });
+
+  test('normaliza GoogleBook sin volumeInfo ni imageLinks', () => {
+    const book = normalizeGoogleBook({
+      id: 'google-empty',
+    });
+
+    assert.include(book, {
+      id: 'openlibrary:book:google-empty',
+      title: 'Sin título',
+      year: '—',
+      rating: '—',
+      poster: '/img/fallbacks/book-fallback.webp',
+      backdrop: '/img/fallbacks/book-fallback.webp',
+      synopsis: '',
+    });
+
+    assert.deepEqual(book.genres, []);
+  });
+
+  test('OpenLibrary usa first_sentence string', () => {
+    const book = normalizeOpenLibraryBook({
+      first_sentence: 'Primera frase simple',
+    });
+
+    assert.equal(book.synopsis, 'Primera frase simple');
+  });
+
+  test('RAWG usa url vacío cuando no existe store', () => {
+    const game = normalizeRawgGame({
+      id: 1,
+      stores: [{}],
+    });
+
+    assert.deepEqual(game.gameStores, []);
+  });
+
+  test('RAWG ignora tiendas desconocidas', () => {
+    const game = normalizeRawgGame({
+      id: 2,
+      stores: [
+        {
+          url: 'https://ejemplo.com/juego'
+        }
+      ]
+    });
+
+    assert.deepEqual(game.gameStores, []);
+  });
+
+  test('MusicBrainz usa Sin título cuando no hay nombre', () => {
+    const music = normalizeMusicBrainzRelease({
+      id: 'abc',
+    });
+
+    assert.equal(music.title, 'Sin título');
+  });
 });
