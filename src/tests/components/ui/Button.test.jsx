@@ -91,4 +91,13 @@ describe('Button', () => {
       screen.getByRole('button').disabled
     );
   });
+  test('usa variante primary cuando variant no está en el map', () => {
+    render(<Button variant="unknown">Botón</Button>);
+    assert.include(screen.getByRole('button').className, 'nl-btn--primary');
+  });
+
+  test('usa tamaño md cuando size no está en el map', () => {
+    render(<Button size="unknown">Botón</Button>);
+    assert.include(screen.getByRole('button').className, 'nl-btn--md');
+  });
 });

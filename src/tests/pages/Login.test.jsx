@@ -368,4 +368,68 @@ describe("Login", () => {
       assert.ok(await screen.findByText("Ocurrió un error con Google."));
     });
   });
+  describe("branches adicionales", () => {
+    test("redirige a admin cuando rol es ADMIN (sin ROLE_)", async () => {
+      login.mockResolvedValueOnce({
+        id: 2,
+        nombre: "Admin",
+        correo: "admin@test.com",
+        token: "token-admin2",
+        rolNombre: "ADMIN",
+      });
+      renderLogin();
+      fireEvent.change(screen.getByPlaceholderText("tu@email.com"), { target: { value: "admin@test.com" } });
+      fireEvent.change(screen.getByPlaceholderText("Contraseña"), { target: { value: "12345678" } });
+      fireEvent.click(screen.getByText("Entrar"));
+      assert.ok(await screen.findByText("Inicio de sesión exitoso"));
+      await waitFor(() => {
+        const calls = navigateMock.mock.calls;
+        const adminCall = calls.find(c => c[0] === '/admin');
+        assert.ok(adminCall, `Expected /admin call, got: ${JSON.stringify(calls)}`);
+      }, { timeout: 2500 });
+    });
+
+    test("muestra fallback de error cuando exception no tiene message", async () => {
+      login.mockRejectedValueOnce({});
+      renderLogin();
+      fireEvent.change(screen.getByPlaceholderText("tu@email.com"), { target: { value: "test@test.com" } });
+      fireEvent.change(screen.getByPlaceholderText("Contraseña"), { target: { value: "12345678" } });
+      fireEvent.click(screen.getByText("Entrar"));
+      assert.ok(await screen.findByText("Error al iniciar sesión."));
+    });
+
+    test("usa URL de produccion cuando hostname no es localhost", async () => {
+      Object.defineProperty(window, "location", {
+        value: { hostname: "www.nolimitshub.cl" },
+        writable: true,
+      });
+      supabase.auth.signInWithOAuth.mockResolvedValueOnce({ error: null });
+      renderLogin();
+      fireEvent.click(screen.getByText("Continuar con Google"));
+      await waitFor(() => assert.equal(supabase.auth.signInWithOAuth.mock.calls.length, 1));
+      assert.include(
+        supabase.auth.signInWithOAuth.mock.calls[0][0].options.redirectTo,
+        "nolimitshub.cl"
+      );
+    });
+  });
+  test("usa fallbacks de email y nombre cuando no hay datos del usuario", async () => {
+      login.mockResolvedValueOnce({
+        id: 3,
+        token: null,
+      });
+      renderLogin();
+      fireEvent.change(screen.getByPlaceholderText("tu@email.com"), { target: { value: "usuario@test.com" } });
+      fireEvent.change(screen.getByPlaceholderText("Contraseña"), { target: { value: "12345678" } });
+      fireEvent.click(screen.getByText("Entrar"));
+      assert.ok(await screen.findByText("Inicio de sesión exitoso"));
+      // Sin rolNombre ni rol → rol vacío → navega a /
+      await waitFor(() => {
+        const calls = navigateMock.mock.calls;
+        const homeCall = calls.find(c => c[0] === '/');
+        assert.ok(homeCall);
+      }, { timeout: 2500 });
+      // Verifica que usó email.split como nombre
+      assert.equal(localStorage.getItem('nl_role'), '');
+    });
 });

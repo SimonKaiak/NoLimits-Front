@@ -68,4 +68,9 @@ describe('Badge', () => {
       'nl-badge'
     );
   });
+  test('usa clase y label vacíos cuando type no está en los maps', () => {
+    render(<Badge type="unknown_type" />);
+    const badge = screen.getByText('unknown_type');
+    assert.isNotNull(badge);
+  });
 });

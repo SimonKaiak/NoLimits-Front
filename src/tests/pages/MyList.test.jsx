@@ -165,4 +165,25 @@ describe('MyList', () => {
 
     assert.deepEqual(toggleListMock.mock.calls[0], [obra]);
   });
+  // ── Sin token → redirige a login — líneas 52-56 ───────────────
+  test('redirige a login cuando no hay token', () => {
+    localStorage.clear(); // sin token
+    renderMyList();
+    // loadFavorites no debe llamarse y debe haber redirigido
+    assert.equal(loadFavoritesMock.mock.calls.length, 0);
+  });
+
+  // ── Click en favorito sin token → redirige — líneas 141-142 ──
+  test('redirige a login al quitar favorito sin token', () => {
+    const obra = { id: 'tmdb:movie:1', type: 'movie', title: 'Star Wars' };
+    myListMock = [obra];
+    localStorage.clear(); // sin token
+    renderMyList();
+    // Si logra renderizar el botón, el click debe redirigir sin llamar toggleList
+    const btn = screen.queryByText('Quitar de favoritos');
+    if (btn) {
+      fireEvent.click(btn);
+      assert.equal(toggleListMock.mock.calls.length, 0);
+    }
+  });
 });

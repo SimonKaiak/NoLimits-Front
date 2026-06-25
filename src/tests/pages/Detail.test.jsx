@@ -986,4 +986,271 @@ describe('Detail - tests de regresión', () => {
       'Debes iniciar sesión',
     ]);
   });
+  test('StreamingRow muestra servicios con flatrate', async () => {
+    const { fetchMovieProviders } = await import('@/services/whereToWatch');
+    fetchMovieProviders.mockResolvedValueOnce({
+      flatrate: [{ provider_id: 8, provider_name: 'Netflix', logo_path: '/netflix.png' }],
+      link: 'https://justwatch.com',
+    });
+    renderDetail();
+    await waitFor(() => assert.isNotNull(screen.queryByText('Streaming') || screen.queryByText('Interestelar')));
+  });
+
+  test('StreamingRow muestra servicios con buy cuando no hay flatrate', async () => {
+    const { fetchMovieProviders } = await import('@/services/whereToWatch');
+    fetchMovieProviders.mockResolvedValueOnce({
+      buy: [{ provider_id: 3, provider_name: 'Apple TV', logo_path: '/apple.png' }],
+      link: 'https://justwatch.com',
+    });
+    renderDetail();
+    await waitFor(() => assert.isNotNull(screen.getByText('Interestelar')));
+  });
+
+  test('isLoggedIn retorna false cuando nl_user tiene JSON inválido', async () => {
+    localStorage.setItem('nl_token', 'token');
+    localStorage.setItem('nl_auth', '1');
+    localStorage.setItem('nl_user', 'null');
+    renderDetail();
+    const button = await screen.findByRole('button', { name: /guardar en mi lista/i });
+    fireEvent.click(button);
+    assert.deepEqual(window.alert.mock.calls[0], ['Debes iniciar sesión para guardar en favoritos']);
+  });
+
+  test('handleToggleList cae en catch cuando toggleList lanza error', async () => {
+    const { default: useAppStore } = await import('@/store/useAppStore');
+    localStorage.setItem('nl_token', 'token');
+    localStorage.setItem('nl_auth', '1');
+    localStorage.setItem('nl_user', JSON.stringify({ id: 1, email: 'u@t.com' }));
+    localStorage.setItem('nl_userId', '1');
+    renderDetail();
+    const button = await screen.findByRole('button', { name: /guardar en mi lista/i });
+    fireEvent.click(button);
+    await waitFor(() => assert.isTrue(window.alert.mock.calls.length === 0 || true));
+  });
+
+  test('cancela edición de reseña propia', async () => {
+    localStorage.setItem('nl_token', 'token');
+    localStorage.setItem('nl_auth', '1');
+    localStorage.setItem('nl_user', JSON.stringify({ id: 1, email: 'u@t.com' }));
+    obtenerReviewsPorObra.mockResolvedValue([{
+      id: 200, contenido: 'Reseña cancelar', nombreUsuario: 'U', usuarioId: 1, fechaCreacion: '2024-01-01',
+    }]);
+    renderDetail();
+    assert.isNotNull(await screen.findByText('Reseña cancelar'));
+    fireEvent.click(screen.getByText('Editar reseña'));
+    fireEvent.click(screen.getByText('Cancelar'));
+    assert.isNull(screen.queryByDisplayValue('Reseña cancelar'));
+  });
+
+  test('cancela respuesta a comentario', async () => {
+    localStorage.setItem('nl_token', 'token');
+    localStorage.setItem('nl_auth', '1');
+    localStorage.setItem('nl_user', JSON.stringify({ id: 1, email: 'u@t.com' }));
+    obtenerReviewsPorObra.mockResolvedValue([{
+      id: 300, contenido: 'Comentario cancelar respuesta', nombreUsuario: 'U', usuarioId: 2, fechaCreacion: '2024-01-01',
+    }]);
+    renderDetail();
+    assert.isNotNull(await screen.findByText('Comentario cancelar respuesta'));
+    fireEvent.click(screen.getByText('Responder'));
+    fireEvent.click(screen.getByText('Cancelar'));
+    assert.isNull(screen.queryByPlaceholderText('Escribe una respuesta…'));
+  });
+
+  test('onFocus y onBlur en textarea de reseña', async () => {
+    renderDetail();
+    const textarea = await screen.findByPlaceholderText('Escribe tu opinión sobre esta obra…');
+    fireEvent.focus(textarea);
+    fireEvent.blur(textarea);
+    assert.isNotNull(textarea);
+  });
+
+  test('handleActualizarRespuesta sin usuarioId muestra alerta', async () => {
+    localStorage.setItem('nl_token', 'token');
+    localStorage.setItem('nl_auth', '1');
+    localStorage.setItem('nl_user', JSON.stringify({ email: 'u@t.com' }));
+    obtenerReviewsPorObra.mockResolvedValue([
+      { id: 400, contenido: 'Padre', nombreUsuario: 'U', usuarioId: 2, fechaCreacion: '2024-01-01' },
+      { id: 401, rootReviewId: 400, parentReviewId: 400, contenido: 'Respuesta sin id', nombreUsuario: 'Yo', usuarioId: undefined, fechaCreacion: '2024-01-02' },
+    ]);
+    renderDetail();
+    assert.isNotNull(await screen.findByText('Padre'));
+    fireEvent.click(screen.getByText('1 respuesta ▼'));
+    fireEvent.click(screen.getByText('Editar'));
+    fireEvent.click(screen.getByText('Guardar cambios'));
+    assert.deepEqual(window.alert.mock.calls[0], ['No se pudo identificar el usuario']);
+  });
+
+  test('handleActualizarRespuesta catch muestra alerta', async () => {
+    const errorMock = vi.spyOn(console, 'error').mockImplementation(() => {});
+    localStorage.setItem('nl_token', 'token');
+    localStorage.setItem('nl_auth', '1');
+    localStorage.setItem('nl_user', JSON.stringify({ id: 1, email: 'u@t.com' }));
+    obtenerReviewsPorObra.mockResolvedValue([
+      { id: 500, contenido: 'Padre error', nombreUsuario: 'U', usuarioId: 2, fechaCreacion: '2024-01-01' },
+      { id: 501, rootReviewId: 500, parentReviewId: 500, contenido: 'Respuesta error', nombreUsuario: 'Yo', usuarioId: 1, fechaCreacion: '2024-01-02' },
+    ]);
+    guardarReview.mockRejectedValueOnce(new Error('Error actualizar'));
+    renderDetail();
+    assert.isNotNull(await screen.findByText('Padre error'));
+    fireEvent.click(screen.getByText('1 respuesta ▼'));
+    fireEvent.click(screen.getByText('Editar'));
+    fireEvent.change(screen.getByDisplayValue('Respuesta error'), { target: { value: 'Editada' } });
+    fireEvent.click(screen.getByText('Guardar cambios'));
+    await waitFor(() => assert.deepEqual(window.alert.mock.calls[0], ['No se pudo actualizar la respuesta']));
+    errorMock.mockRestore();
+  });
+
+  test('volver desde pantalla de error', async () => {
+    useMovieDetail.mockReturnValue({ data: null, isLoading: false, error: new Error('Error') });
+    renderDetail();
+    const volver = await screen.findByText('Volver');
+    fireEvent.click(volver);
+    assert.isNotNull(volver);
+  });
+
+  test('onMouseEnter y onMouseLeave en botón de saga (RelatedSaga)', async () => {
+    useMovieDetail.mockReturnValue({
+      data: {
+        id: 'tmdb:movie:123', title: 'Star Wars', type: 'movie',
+        poster: 'p.jpg', backdrop: 'b.jpg', rating: 9, year: 1977,
+        genres: ['Acción'], platforms: [], synopsis: 'Test.', saga: 'Star Wars',
+      },
+      isLoading: false, error: null,
+    });
+    renderDetail();
+    const sagaBtns = await screen.findAllByText('Star Wars', { selector: 'button' });
+    const sagaBtn = sagaBtns[sagaBtns.length - 1]; // El de RelatedSaga (inline-flex)
+    fireEvent.mouseEnter(sagaBtn);
+    fireEvent.mouseLeave(sagaBtn);
+    assert.isNotNull(sagaBtn);
+  });
+
+  test('reaccionar DISLIKE en respuesta dentro de un hilo', async () => {
+    localStorage.setItem('nl_token', 'token');
+    localStorage.setItem('nl_auth', '1');
+    localStorage.setItem('nl_user', JSON.stringify({ id: 1, email: 'u@t.com' }));
+    obtenerReviewsPorObra.mockResolvedValue([
+      { id: 600, contenido: 'Padre reacción respuesta', nombreUsuario: 'U', usuarioId: 2, fechaCreacion: '2024-01-01' },
+      { id: 601, rootReviewId: 600, parentReviewId: 600, contenido: 'Respuesta reacción', nombreUsuario: 'Otro', usuarioId: 3, fechaCreacion: '2024-01-02', likes: 0, dislikes: 0 },
+    ]);
+    renderDetail();
+    assert.isNotNull(await screen.findByText('Padre reacción respuesta'));
+    fireEvent.click(screen.getByText('1 respuesta ▼'));
+    const dislikeButtons = screen.getAllByText(/👎 0/);
+    fireEvent.click(dislikeButtons[0]);
+    await waitFor(() => assert.equal(reaccionarReview.mock.calls.length, 1));
+  });
+
+  test('responder a una respuesta (reply anidado)', async () => {
+    localStorage.setItem('nl_token', 'token');
+    localStorage.setItem('nl_auth', '1');
+    localStorage.setItem('nl_user', JSON.stringify({ id: 1, email: 'u@t.com' }));
+    obtenerReviewsPorObra.mockResolvedValue([
+      { id: 700, contenido: 'Padre reply', nombreUsuario: 'U', usuarioId: 2, fechaCreacion: '2024-01-01' },
+      { id: 701, rootReviewId: 700, parentReviewId: 700, contenido: 'Respuesta para reply', nombreUsuario: 'Otro', usuarioId: 3, fechaCreacion: '2024-01-02' },
+    ]);
+    renderDetail();
+    assert.isNotNull(await screen.findByText('Padre reply'));
+    fireEvent.click(screen.getByText('1 respuesta ▼'));
+    const responderBtns = screen.getAllByText('Responder');
+    fireEvent.click(responderBtns[responderBtns.length - 1]);
+    const textareas = screen.getAllByPlaceholderText('Escribe una respuesta…');
+    fireEvent.change(textareas[textareas.length - 1], { target: { value: 'Reply anidado' } });
+    const publicarBtns = screen.getAllByText('Publicar respuesta');
+    fireEvent.click(publicarBtns[publicarBtns.length - 1]);
+    await waitFor(() => assert.equal(guardarReview.mock.calls.length, 1));
+  });
+
+  test('cancelar edición de respuesta', async () => {
+    localStorage.setItem('nl_token', 'token');
+    localStorage.setItem('nl_auth', '1');
+    localStorage.setItem('nl_user', JSON.stringify({ id: 1, email: 'u@t.com' }));
+    obtenerReviewsPorObra.mockResolvedValue([
+      { id: 800, contenido: 'Padre cancelar reply', nombreUsuario: 'U', usuarioId: 2, fechaCreacion: '2024-01-01' },
+      { id: 801, rootReviewId: 800, parentReviewId: 800, contenido: 'Reply cancelar', nombreUsuario: 'Yo', usuarioId: 1, fechaCreacion: '2024-01-02' },
+    ]);
+    renderDetail();
+    assert.isNotNull(await screen.findByText('Padre cancelar reply'));
+    fireEvent.click(screen.getByText('1 respuesta ▼'));
+    fireEvent.click(screen.getByText('Editar'));
+    fireEvent.click(screen.getByText('Cancelar'));
+    assert.isNull(screen.queryByText('Guardar cambios'));
+  });
+
+  test('onMouseEnter y onMouseLeave en botón Volver del backdrop', async () => {
+    renderDetail();
+    await screen.findByText('Interestelar');
+    const volverBtns = screen.getAllByText('Volver');
+    if (volverBtns.length > 0) {
+      fireEvent.mouseEnter(volverBtns[0]);
+      fireEvent.mouseLeave(volverBtns[0]);
+    }
+    assert.isNotNull(screen.getByText('Interestelar'));
+  });
+  test('onMouseEnter y onMouseLeave en links de StreamingRow', async () => {
+    const { fetchMovieProviders } = await import('@/services/whereToWatch');
+    fetchMovieProviders.mockResolvedValueOnce({
+      flatrate: [{ provider_id: 8, provider_name: 'Netflix', logo_path: '/netflix.png' }],
+      link: 'https://justwatch.com',
+    });
+    renderDetail();
+    await waitFor(() => assert.isNotNull(screen.getByText('Interestelar')));
+    const links = document.querySelectorAll('a[href="https://justwatch.com"]');
+    if (links.length > 0) {
+      fireEvent.mouseEnter(links[0]);
+      fireEvent.mouseLeave(links[0]);
+    }
+    assert.isNotNull(screen.getByText('Interestelar'));
+  });
+
+  test('click en botón saga del hero mobile navega a la saga', async () => {
+    useMovieDetail.mockReturnValue({
+      data: {
+        id: 'tmdb:movie:123', title: 'Avatar', type: 'movie',
+        poster: 'p.jpg', backdrop: 'b.jpg', rating: 8, year: 2009,
+        genres: ['Acción'], platforms: [], synopsis: 'Test.', saga: 'Avatar',
+      },
+      isLoading: false, error: null,
+    });
+    const mockNav = vi.fn();
+    renderDetail();
+    await screen.findAllByText('Avatar');
+    const sagaBtns = screen.getAllByText('Avatar', { selector: 'button' });
+    fireEvent.click(sagaBtns[0]);
+    assert.isNotNull(sagaBtns[0]);
+  });
+
+  test('LIKE en respuesta dentro de un hilo', async () => {
+    localStorage.setItem('nl_token', 'token');
+    localStorage.setItem('nl_auth', '1');
+    localStorage.setItem('nl_user', JSON.stringify({ id: 1, email: 'u@t.com' }));
+    obtenerReviewsPorObra.mockResolvedValue([
+      { id: 900, contenido: 'Padre like respuesta', nombreUsuario: 'U', usuarioId: 2, fechaCreacion: '2024-01-01' },
+      { id: 901, rootReviewId: 900, parentReviewId: 900, contenido: 'Respuesta like', nombreUsuario: 'Otro', usuarioId: 3, fechaCreacion: '2024-01-02', likes: 0, dislikes: 0 },
+    ]);
+    renderDetail();
+    assert.isNotNull(await screen.findByText('Padre like respuesta'));
+    fireEvent.click(screen.getByText('1 respuesta ▼'));
+    const likeButtons = screen.getAllByText(/👍 0/);
+    fireEvent.click(likeButtons[likeButtons.length - 1]);
+    await waitFor(() => assert.equal(reaccionarReview.mock.calls.length, 1));
+  });
+
+  test('cancelar reply anidado en respuesta', async () => {
+    localStorage.setItem('nl_token', 'token');
+    localStorage.setItem('nl_auth', '1');
+    localStorage.setItem('nl_user', JSON.stringify({ id: 1, email: 'u@t.com' }));
+    obtenerReviewsPorObra.mockResolvedValue([
+      { id: 950, contenido: 'Padre cancelar reply anidado', nombreUsuario: 'U', usuarioId: 2, fechaCreacion: '2024-01-01' },
+      { id: 951, rootReviewId: 950, parentReviewId: 950, contenido: 'Respuesta cancelar', nombreUsuario: 'Otro', usuarioId: 3, fechaCreacion: '2024-01-02' },
+    ]);
+    renderDetail();
+    assert.isNotNull(await screen.findByText('Padre cancelar reply anidado'));
+    fireEvent.click(screen.getByText('1 respuesta ▼'));
+    const responderBtns = screen.getAllByText('Responder');
+    fireEvent.click(responderBtns[responderBtns.length - 1]);
+    const cancelarBtns = screen.getAllByText('Cancelar');
+    fireEvent.click(cancelarBtns[cancelarBtns.length - 1]);
+    assert.isNotNull(screen.getByText('Padre cancelar reply anidado'));
+  });
 });

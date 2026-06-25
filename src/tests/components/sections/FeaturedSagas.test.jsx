@@ -98,4 +98,34 @@ describe('FeaturedSagas', () => {
 
     assert.deepEqual(mockNavigate.mock.calls[0], ['/saga/Batman']);
   });
+  test('no renderiza imagen cuando backdropUrl es null', async () => {
+    const { searchMovies } = await import('@/services/tmdb');
+    searchMovies.mockResolvedValue({ results: [] });
+
+    renderFeaturedSagas();
+
+    assert.equal(screen.queryByAltText('Spider-Man'), null);
+  });
+
+  test('renderiza imagen cuando backdropUrl tiene valor', async () => {
+    const { waitFor } = await import('@testing-library/react');
+    const { searchMovies } = await import('@/services/tmdb');
+
+    searchMovies.mockResolvedValue({
+      results: [{
+        id: 1,
+        title: 'Mock',
+        backdrop_path: '/backdrop.jpg',
+        release_date: '2024-01-01',
+        vote_average: 8,
+      }]
+    });
+
+    renderFeaturedSagas();
+
+    await waitFor(() => {
+      const imgs = document.querySelectorAll('img');
+      assert.isTrue(imgs.length > 0);
+    });
+  });
 });

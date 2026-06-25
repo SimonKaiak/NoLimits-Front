@@ -133,4 +133,18 @@ describe('SearchBar', () => {
       'Matrix'
     );
   });
+  test('navega sin llamar onSearch cuando onSearch no se proporciona', () => {
+    renderSearchBar(); // sin onSearch
+    const input = screen.getByLabelText('Buscar obras');
+    fireEvent.change(input, { target: { value: 'Matrix' } });
+    fireEvent.submit(screen.getByRole('search'));
+    // No debe lanzar error y debe funcionar sin onSearch
+    assert.isNotNull(input);
+  });
+
+  test('cambia de tab sin onSearch no lanza error', () => {
+    renderSearchBar(); // sin onSearch
+    fireEvent.click(screen.getByRole('tab', { name: /Anime/i }));
+    assert.isNotNull(screen.getByRole('tab', { name: /Anime/i }));
+  });
 });

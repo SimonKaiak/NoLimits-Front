@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, test, assert } from 'vitest';
 import WhereToFind from '@/components/ui/WhereToFind';
 import { MEDIA_TYPES } from '@/utils/constants';
@@ -220,5 +220,82 @@ describe('WhereToFind - tests de regresión', () => {
     );
 
     assert.equal(container.textContent, '');
+  });
+  test('dispara onMouseEnter y onMouseLeave en links de compra', () => {
+    const obra = {
+      title: 'Juego hover',
+      type: MEDIA_TYPES.GAME,
+      linksCompra: [{ url: 'https://example.com', label: 'Tienda' }],
+    };
+    render(<WhereToFind obra={obra} />);
+    const link = screen.getByRole('link', { name: /tienda/i });
+    fireEvent.mouseEnter(link);
+    fireEvent.mouseLeave(link);
+    assert.isNotNull(link);
+  });
+
+  test('muestra linksCompra para película', () => {
+    const obra = {
+      title: 'Película con links',
+      type: MEDIA_TYPES.MOVIE,
+      linksCompra: [{ url: 'https://example.com/pelicula', label: 'Tienda Película' }],
+    };
+    render(<WhereToFind obra={obra} />);
+    assert.isNotNull(screen.getByRole('link', { name: /tienda película/i }));
+  });
+  test('dispara onMouseEnter y onMouseLeave en LinkButton (anime)', () => {
+    const obra = {
+      title: 'Naruto hover',
+      type: MEDIA_TYPES.ANIME,
+    };
+    render(<WhereToFind obra={obra} />);
+    const link = screen.getByRole('link', { name: /crunchyroll/i });
+    fireEvent.mouseEnter(link);
+    fireEvent.mouseLeave(link);
+    assert.isNotNull(link);
+  });
+
+  test('muestra linksCompra para serie', () => {
+    const obra = {
+      title: 'Serie con links',
+      type: MEDIA_TYPES.SERIES,
+      linksCompra: [{ url: 'https://example.com/serie', label: 'Tienda Serie' }],
+    };
+    render(<WhereToFind obra={obra} />);
+    assert.isNotNull(screen.getByRole('link', { name: /tienda serie/i }));
+  });
+  test('dispara onMouseEnter y onMouseLeave en link de linksCompra de película', () => {
+    const obra = {
+      title: 'Película hover',
+      type: MEDIA_TYPES.MOVIE,
+      linksCompra: [{ url: 'https://example.com', label: 'Tienda Hover' }],
+    };
+    render(<WhereToFind obra={obra} />);
+    const link = screen.getByRole('link', { name: /tienda hover/i });
+    fireEvent.mouseEnter(link);
+    fireEvent.mouseLeave(link);
+    assert.isNotNull(link);
+  });
+  test('muestra plataformaNombre cuando label es null en linksCompra de película', () => {
+    const obra = {
+      title: 'Película plataforma',
+      type: MEDIA_TYPES.MOVIE,
+      linksCompra: [{ url: 'https://example.com', plataformaNombre: 'MiTienda' }],
+    };
+    render(<WhereToFind obra={obra} />);
+    assert.isNotNull(screen.getByText('MiTienda'));
+  });
+  test('retorna linksCompra directamente para serie sin pasar por movie', () => {
+    const obra = {
+      title: 'Serie directa',
+      type: MEDIA_TYPES.SERIES,
+      linksCompra: [
+        { url: 'https://example.com/s1', label: 'Link1Serie' },
+        { url: 'https://example.com/s2', plataformaNombre: 'Link2Serie' },
+      ],
+    };
+    render(<WhereToFind obra={obra} />);
+    assert.isNotNull(screen.getByText('Link1Serie'));
+    assert.isNotNull(screen.getByText('Link2Serie'));
   });
 });
