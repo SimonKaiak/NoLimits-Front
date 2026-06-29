@@ -78,15 +78,30 @@ function Header() {
           </nav>
 
         <div className="nl-header__actions" ref={searchRef}>
-          {/* Botón Mi Biblioteca — solo visible en móvil */}
+          {searchOpen && (
+            <div style={{ width: '260px' }}>
+              <SearchBar compact />
+            </div>
+          )}
+
+          <button
+            className="nl-header__search-btn"
+            onClick={() => setSearchOpen((v) => !v)}
+            aria-label={searchOpen ? 'Cerrar búsqueda' : 'Abrir búsqueda'}
+          >
+            {searchOpen ? <X size={20} /> : <Search size={20} />}
+          </button>
+
+          {/* Botón Lista — solo visible en móvil */}
           {user && (
             <button
               className="nl-header__search-btn nl-header__library-mobile"
               onClick={() => navigate('/my-list')}
               aria-label="Mi biblioteca"
-              style={{ position: 'relative' }}
+              style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '13px' }}
             >
-              <BookMarked size={20} />
+              <BookMarked size={16} />
+              Lista
               {myListCount > 0 && (
                 <span
                   style={{
@@ -110,21 +125,6 @@ function Header() {
             </button>
           )}
 
-          {searchOpen && (
-
-            <div style={{ width: '260px' }}>
-              <SearchBar compact />
-            </div>
-          )}
-
-          <button
-            className="nl-header__search-btn"
-            onClick={() => setSearchOpen((v) => !v)}
-            aria-label={searchOpen ? 'Cerrar búsqueda' : 'Abrir búsqueda'}
-        >
-            {searchOpen ? <X size={20} /> : <Search size={20} />}
-          </button>
-
           {/* Login / logout */}
           {user ? (
             <>
@@ -141,7 +141,7 @@ function Header() {
                 }}
               >
                 <User size={16} />
-                Mi Perfil
+                Perfil
               </button>
 
               {/*Logout */}
