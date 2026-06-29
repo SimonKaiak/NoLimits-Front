@@ -78,6 +78,38 @@ function Header() {
           </nav>
 
         <div className="nl-header__actions" ref={searchRef}>
+          {/* Botón Mi Biblioteca — solo visible en móvil */}
+          {user && (
+            <button
+              className="nl-header__search-btn nl-header__library-mobile"
+              onClick={() => navigate('/my-list')}
+              aria-label="Mi biblioteca"
+              style={{ position: 'relative' }}
+            >
+              <BookMarked size={20} />
+              {myListCount > 0 && (
+                <span
+                  style={{
+                    position: 'absolute',
+                    top: '-4px',
+                    right: '-6px',
+                    background: 'var(--nl-accent)',
+                    color: '#fff',
+                    borderRadius: '10px',
+                    padding: '0 5px',
+                    fontSize: '10px',
+                    fontWeight: 700,
+                    lineHeight: '16px',
+                    minWidth: '16px',
+                    textAlign: 'center',
+                  }}
+                >
+                  {myListCount}
+                </span>
+              )}
+            </button>
+          )}
+
           {searchOpen && (
 
             <div style={{ width: '260px' }}>
