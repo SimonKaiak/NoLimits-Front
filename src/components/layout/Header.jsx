@@ -100,14 +100,14 @@ function Header() {
               aria-label="Mi biblioteca"
               style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '13px' }}
             >
-              <BookMarked size={16} />
-              Lista
-              {myListCount > 0 && (
+              <span style={{ position: 'relative', display: 'inline-flex' }}>
+                <BookMarked size={16} />
+                {myListCount > 0 && (
                 <span
                   style={{
                     position: 'absolute',
-                    top: '-4px',
-                    right: '-6px',
+                    top: '-5px',
+                    right: '-7px',
                     background: 'var(--nl-accent)',
                     color: '#fff',
                     borderRadius: '10px',
@@ -121,7 +121,9 @@ function Header() {
                 >
                   {myListCount}
                 </span>
-              )}
+                )}
+              </span>
+              Lista
             </button>
           )}
 
