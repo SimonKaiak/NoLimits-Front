@@ -678,6 +678,16 @@
   }
 }
 
+/* Ícono Mi Biblioteca — solo en móvil */
+.nl-header__library-mobile {
+  display: none;
+}
+@media (max-width: 767px) {
+  .nl-header__library-mobile {
+    display: flex;
+  }
+}
+
 /* ============================================================
    GRID DE SAGAS DESTACADAS — responsive
 ============================================================ */
